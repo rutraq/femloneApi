@@ -1,12 +1,14 @@
-from flask import Flask
+from flask import Flask, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 
 @app.route('/')
 def hello_world():
-    test = "pidor"
-    return test
+    test = {"user": "debil"}
+    return jsonify(test)
 
 
 if __name__ == '__main__':
