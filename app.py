@@ -1,4 +1,3 @@
-import python_jwt as jwt
 from flask import Flask, jsonify, request, make_response
 from flask_cors import CORS
 from flask_pymongo import PyMongo
@@ -30,7 +29,7 @@ def get_from_database():
     return jsonify(data)
 
 
-@app.route('/admin')
+@app.route('/login')
 def login():
     mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/admin")
     db = mongodb_client.db
@@ -39,9 +38,13 @@ def login():
         if check_password_hash(user["password"], request.args.get("password")):
             return tokens_generate(user['login'], "administrator")
         else:
-            return jsonify(message="bad")
+            response = make_response(jsonify(message="wrong password"))
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            return response
     else:
-        return jsonify(message="bad")
+        response = make_response(jsonify(message="wrong user"))
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
 
 
 def tokens_generate(name, role):
@@ -51,7 +54,7 @@ def tokens_generate(name, role):
         "exp": datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(minutes=15)
     }
     access_token = jwt.encode(payload_access, app.config["key"], algorithm="HS256")
-    response = make_response(jsonify(message="true"))
+    response = make_response(jsonify(message="logged in"))
     response.headers["Access-Control-Allow-Credentials"] = "true"
     response.set_cookie("access_token", access_token, httponly=True)
     response.set_cookie("refresh_token", refresh_token_generate(name, role), httponly=True)
@@ -60,18 +63,18 @@ def tokens_generate(name, role):
 
 def refresh_token_generate(name, role):
     mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/admin")
-    db = mongodb_client.db
+    db = mongodb_client.db["sessions"]
 
-    sessions = list_from_db(db.sessions.find({"name": name}))
+    sessions = list_from_db(db.find({"name": name}))
     if len(sessions) >= 5:
-        db.sessions.delete_many({"name": name})
+        db.delete_many({"name": name})
 
     refresh_token = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=512))
-    db.sessions.insert_one({
+    db.insert_one({
         "name": name,
         "role": role,
         "refresh_token": refresh_token,
-        "exp": (datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=30)).timestamp()
+        "exp": (datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(days=30)).timestamp()
     })
     return refresh_token
 
@@ -108,15 +111,14 @@ def list_from_db(cursor):
 
 
 @app.route("/change-text", methods=["POST"])
-def ch():
+def change_text():
     checked = jwt_check(request.cookies.get("access_token"), app.config["key"])
     if checked[0]:
-        mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/text")
-        db = mongodb_client.db
+        db = request.args.get("db")
         page = request.args.get("page")
         text_id = request.args.get("id")
-        if page == "about":
-            db.about.upade_one({'id': text_id}, {'$set': {'text': request.headers.get("text")}})
+        text = request.args.get("text")
+        update_database_info(db, page, text_id, text)
         response = make_response(jsonify(message="updated"))
     elif checked[1] == "invalid signature":
         response = make_response(jsonify(message="invalid signature"))
@@ -124,6 +126,12 @@ def ch():
         response = make_response(jsonify(message="expired signature"))
     response.headers["Access-Control-Allow-Credentials"] = "true"
     return response
+
+
+def update_database_info(db, collection, text_id, text):
+    mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/{0}".format(db))
+    db = mongodb_client.db[collection]
+    db.update_one({"id": text_id}, {"$set": {"text": text}})
 
 
 def jwt_check(token, password_key):
