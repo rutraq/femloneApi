@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, request, make_response
 from flask_cors import CORS
 from flask_pymongo import PyMongo
@@ -11,6 +12,7 @@ app = Flask(__name__)
 CORS(app)
 app.config[
     "key"] = "WnZr4u7x!A%D*G-KaNdRgUkXp2s5v8y/B?E(H+MbQeShVmYq3t6w9z$C&F)J@NcRfUjWnZr4u7x!A%D*G-KaPdSgVkYp2s5v8y/B?E(H+MbQeThWmZq4t6w9z$C&F)J@NcRfUjXn2r5u8x!A%D*G-KaPdSgVkYp3s6v9y$B?E(H+MbQeThWmZq4t7w!z%C*F)J@NcRfUjXn2r5u8x/A?D(G+KaPdSgVkYp3s6v9y$B&E)H@McQeThWmZq4t7w!z%"
+app.config["path"] = "C:\Projects HTML\BeautyWebSite\photos"
 
 
 @app.route('/get-text')
@@ -120,6 +122,23 @@ def change_text():
         text = request.args.get("text")
         update_database_info(db, page, text_id, text)
         response = make_response(jsonify(message="updated"))
+    elif checked[1] == "invalid signature":
+        response = make_response(jsonify(message="invalid signature"))
+    else:
+        response = make_response(jsonify(message="expired signature"))
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
+
+@app.route("/upload-photo", methods=["POST"])
+def check():
+    checked = jwt_check(request.cookies.get("access_token"), app.config["key"])
+    if checked[0]:
+        file = request.files['img']
+        file.save(os.path.join(app.config["path"], file.filename))
+        mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/photos")
+        db = mongodb_client.db[request.args.get('page')]
+        response = make_response(jsonify(message="uploaded"))
     elif checked[1] == "invalid signature":
         response = make_response(jsonify(message="invalid signature"))
     else:
