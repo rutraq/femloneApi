@@ -12,22 +12,30 @@ app = Flask(__name__)
 CORS(app)
 app.config[
     "key"] = "WnZr4u7x!A%D*G-KaNdRgUkXp2s5v8y/B?E(H+MbQeShVmYq3t6w9z$C&F)J@NcRfUjWnZr4u7x!A%D*G-KaPdSgVkYp2s5v8y/B?E(H+MbQeThWmZq4t6w9z$C&F)J@NcRfUjXn2r5u8x!A%D*G-KaPdSgVkYp3s6v9y$B?E(H+MbQeThWmZq4t7w!z%C*F)J@NcRfUjXn2r5u8x/A?D(G+KaPdSgVkYp3s6v9y$B&E)H@McQeThWmZq4t7w!z%"
-app.config["path"] = "C:\Projects HTML\BeautyWebSite\photos"
+# app.config["path"] = "C:\Projects HTML\BeautyWebSite\photos"  # laptop
+app.config["path"] = "M:\HTML_Projects\BeautyWebSite\photos"  # PC
+app.config["url"] = "photos\\"
 
 
 @app.route('/get-text')
-def get_from_database():
+def get_from_database_text():
     mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/text")
-    db = mongodb_client.db
-    if request.args.get("page") == "about":
-        texts = db.about.find()
-    elif request.args.get("page") == "home":
-        texts = db.home.find()
-    else:
-        texts = db.about.find()
+    db = mongodb_client.db[request.args.get("page")]
+    texts = db.find()
     data = {}
     for text in texts:
         data[text['id']] = text['text']
+    return jsonify(data)
+
+
+@app.route("/get-photo")
+def get_from_database_photo():
+    mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/photos")
+    db = mongodb_client.db[request.args.get("page")]
+    photos = db.find()
+    data = {}
+    for photo in photos:
+        data[photo["id"]] = photo["url"]
     return jsonify(data)
 
 
@@ -130,14 +138,16 @@ def change_text():
     return response
 
 
-@app.route("/upload-photo", methods=["POST"])
-def check():
+@app.route("/change-photo", methods=["POST"])
+def change_photo():
     checked = jwt_check(request.cookies.get("access_token"), app.config["key"])
     if checked[0]:
         file = request.files['img']
+        url = str(app.config["url"] + file.filename)
         file.save(os.path.join(app.config["path"], file.filename))
         mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/photos")
         db = mongodb_client.db[request.args.get('page')]
+        db.update_one({"id": 1}, {"$set": {"url": url}})
         response = make_response(jsonify(message="uploaded"))
     elif checked[1] == "invalid signature":
         response = make_response(jsonify(message="invalid signature"))
