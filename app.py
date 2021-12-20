@@ -12,8 +12,8 @@ app = Flask(__name__)
 CORS(app)
 app.config[
     "key"] = "WnZr4u7x!A%D*G-KaNdRgUkXp2s5v8y/B?E(H+MbQeShVmYq3t6w9z$C&F)J@NcRfUjWnZr4u7x!A%D*G-KaPdSgVkYp2s5v8y/B?E(H+MbQeThWmZq4t6w9z$C&F)J@NcRfUjXn2r5u8x!A%D*G-KaPdSgVkYp3s6v9y$B?E(H+MbQeThWmZq4t7w!z%C*F)J@NcRfUjXn2r5u8x/A?D(G+KaPdSgVkYp3s6v9y$B&E)H@McQeThWmZq4t7w!z%"
-# app.config["path"] = "C:\Projects HTML\BeautyWebSite\photos"  # laptop
-app.config["path"] = "M:\HTML_Projects\BeautyWebSite\photos"  # PC
+app.config["path"] = "C:\Projects_HTML\BeautyWebSite\photos"  # laptop
+# app.config["path"] = "M:\HTML_Projects\BeautyWebSite\photos"  # PC
 app.config["url"] = "photos\\"
 
 
@@ -147,7 +147,8 @@ def change_photo():
         file.save(os.path.join(app.config["path"], file.filename))
         mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/photos")
         db = mongodb_client.db[request.args.get('page')]
-        db.update_one({"id": 1}, {"$set": {"url": url}})
+        # db.update_one({"id": request.args.get("id")}, {"$set": {"url": url}})
+        db.insert_one({"id": request.args.get("id"), "url": url})
         response = make_response(jsonify(message="uploaded"))
     elif checked[1] == "invalid signature":
         response = make_response(jsonify(message="invalid signature"))
