@@ -174,7 +174,8 @@ def upload():
 def update_database_info(db, collection, text_id, text):
     mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/{0}".format(db))
     db = mongodb_client.db[collection]
-    db.update_one({"id": text_id}, {"$set": {"text": text}})
+    # db.update_one({"id": text_id}, {"$set": {"text": text}})
+    db.insert_one({"id": text_id, "text": text})
 
 
 def jwt_check(token, password_key):
