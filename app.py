@@ -20,7 +20,7 @@ app.config["url"] = "photos\\"
 
 @app.route('/get-text')
 def get_from_database_text():
-    mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/text")
+    mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/{0}".format(request.args.get("db")))
     db = mongodb_client.db[request.args.get("page")]
     texts = db.find()
     data = {}
@@ -133,8 +133,10 @@ def change_text():
         response = make_response(jsonify(message="updated"))
     elif checked[1] == "invalid signature":
         response = make_response(jsonify(message="invalid signature"))
-    else:
+    elif checked[1] == "expired signature":
         response = make_response(jsonify(message="expired signature"))
+    else:
+        response = make_response(jsonify(message="missing token"))
     response.headers["Access-Control-Allow-Credentials"] = "true"
     return response
 
@@ -186,6 +188,8 @@ def jwt_check(token, password_key):
         return [False, "invalid signature"]
     except jwt.exceptions.ExpiredSignatureError:
         return [False, "expired signature"]
+    except jwt.exceptions.DecodeError:
+        return [False, "missing token"]
 
 
 if __name__ == '__main__':
