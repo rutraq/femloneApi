@@ -141,6 +141,46 @@ def change_text():
     return response
 
 
+@app.route("/change-price", methods=["POST"])
+def change_price():
+    checked = jwt_check(request.cookies.get("access_token"), app.config["key"])
+    if checked[0]:
+        page = request.args.get("page")
+        text_id = request.args.get("id")
+        text = request.args.get("text")
+        price = request.args.get("price")
+        update_database_price(page, text_id, text, price)
+        response = make_response(jsonify(message="updated"))
+    elif checked[1] == "invalid signature":
+        response = make_response(jsonify(message="invalid signature"))
+    elif checked[1] == "expired signature":
+        response = make_response(jsonify(message="expired signature"))
+    else:
+        response = make_response(jsonify(message="missing token"))
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
+
+@app.route("/delete-price", methods=["POST"])
+def delete_price():
+    checked = jwt_check(request.cookies.get("access_token"), app.config["key"])
+    if checked[0]:
+        page = request.args.get("page")
+        text_id = request.args.get("id")
+        mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/prices")
+        db = mongodb_client.db[page]
+        db.delete_one({"id": text_id})
+        response = make_response(jsonify(message="updated"))
+    elif checked[1] == "invalid signature":
+        response = make_response(jsonify(message="invalid signature"))
+    elif checked[1] == "expired signature":
+        response = make_response(jsonify(message="expired signature"))
+    else:
+        response = make_response(jsonify(message="missing token"))
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
+
 @app.route("/change-photo", methods=["POST"])
 def change_photo():
     checked = jwt_check(request.cookies.get("access_token"), app.config["key"])
@@ -178,6 +218,16 @@ def update_database_info(db, collection, text_id, text):
     db = mongodb_client.db[collection]
     # db.update_one({"id": text_id}, {"$set": {"text": text}})
     db.insert_one({"id": text_id, "text": text})
+
+
+def update_database_price(collection, text_id, name, price):
+    mongodb_client = PyMongo(app, uri="mongodb://localhost:27017/prices")
+    db = mongodb_client.db[collection]
+    check = db.find({"id": text_id})
+    if len(list(check)) != 0:
+        db.update_one({"id": text_id}, {"$set": {"id": name, "text": price}})
+    else:
+        db.insert_one({"id": text_id, "text": price})
 
 
 def jwt_check(token, password_key):
