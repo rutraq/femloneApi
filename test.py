@@ -3,6 +3,7 @@ import pybit
 import openpyxl
 from flask import Flask, request
 from threading import Thread
+import telebot
 
 session = pybit.HTTP("https://api-testnet.bybit.com",
                      api_key="XiDGurqyUmnY0Qjh4a", api_secret="NbXvPCNNMmCCpfrmIQIVeNeSly8fBb9MPviA")
@@ -366,5 +367,19 @@ def open_trade(search_symbol, leverage, percentage_of_balance, multitake, take_p
         short_multi_take(search_symbol, take_profit_one, take_profit_two, stop_loss_one, closing_volume_one, stop_loss_two, leverage, percentage_of_balance, qty_position_round)
 
 
+class TelegramBot:
+    def __init__(self):
+        self.token = "5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y"
+        self.bot = telebot.TeleBot(self.token)
+
+        @self.bot.message_handler(content_types=['text'])
+        def get_text_messages(message):
+            print(message)
+            if message.text == "sosi":
+                self.bot.send_message(message.from_user.id, "Привет, чем я могу тебе помочь?")
+
+        self.bot.polling(none_stop=True, interval=0)
+
+
 if __name__ == "__main__":
-    app.run()
+    TelegramBot()
