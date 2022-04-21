@@ -376,15 +376,15 @@ class TelegramBot:
     def __init__(self):
         self.token = "5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y"
         self.bot = telebot.TeleBot(self.token)
+        self.group_id = "-699678335"
 
         @self.bot.message_handler(content_types=['text'])
         def get_text_messages(message):
-            print(message)
             if message.text == "sosi":
-                self.bot.send_message(message.from_user.id, "Привет, чем я могу тебе помочь?")
+                self.bot.send_message(self.group_id, "Привет, чем я могу тебе помочь?")
 
         self.bot.polling(none_stop=True, interval=0)
 
 
 if __name__ == "__main__":
-    app.run()
+    TelegramBot()
