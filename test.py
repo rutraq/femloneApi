@@ -12,11 +12,16 @@ app = Flask(__name__)
 
 
 @app.route("/webHookReceive", methods=["POST"])
-def test():
+def make_order():
     search_symbol = request.data.decode()
     th = Thread(target=open_excel, args=(search_symbol,))
     th.start()
     return "200"
+
+
+@app.route("/check", methods=["GET"])
+def check():
+    return "everything is all right"
 
 
 def open_excel(search_symbol):
@@ -382,4 +387,4 @@ class TelegramBot:
 
 
 if __name__ == "__main__":
-    TelegramBot()
+    app.run()
