@@ -310,10 +310,7 @@ def order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_tak
     while k == 1:
         information_order = session.get_conditional_order(symbol=search_symbol.split('-')[0])['result']['data']
         for i in information_order:
-            if i['stop_order_id'] == id_first_take_profit and i['order_status'] == "Untriggered" and first_take_close == False:
-                print("Первый тейк Открыт")
             if i['stop_order_id'] == id_first_take_profit and i['order_status'] == "Filled" and first_take_close == False:
-                print("Первый тейк закрыт")
                 session.cancel_conditional_order(symbol=search_symbol.split('-')[0], stop_order_id=id_stop_loss)
                 if search_symbol.split('-')[1] == "Buy":
                     side = 'Sell'
@@ -345,8 +342,6 @@ def order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_tak
                         )
                         k = 0
                 first_take_close = True
-            if i['stop_order_id'] == id_two_take_profit and i['order_status'] == "Untriggered":
-                print("Второй тейк открыт")
             if i['stop_order_id'] == id_two_take_profit and i['order_status'] == "Filled":
                 session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
                 k = 0
