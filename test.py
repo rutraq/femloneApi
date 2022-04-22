@@ -14,7 +14,7 @@ app = Flask(__name__)
 @app.route("/webHookReceive", methods=["POST"])
 def make_order():
     search_symbol = request.data.decode()
-    TelegramBot().send_web_hook(search_symbol)
+    telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", search_symbol)
     th = Thread(target=open_excel, args=(search_symbol,))
     th.start()
     return "200"
@@ -371,23 +371,6 @@ def open_trade(search_symbol, leverage, percentage_of_balance, multitake, take_p
         long_multi_take(search_symbol, take_profit_one, take_profit_two, stop_loss_one, closing_volume_one, stop_loss_two, leverage, percentage_of_balance, qty_position_round)
     if search_symbol.split('-')[1] == "Sell" and multitake == "true":
         short_multi_take(search_symbol, take_profit_one, take_profit_two, stop_loss_one, closing_volume_one, stop_loss_two, leverage, percentage_of_balance, qty_position_round)
-
-
-class TelegramBot:
-    def __init__(self):
-        self.token = "5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y"
-        self.bot = telebot.TeleBot(self.token)
-        self.group_id = "-699678335"
-
-        # @self.bot.message_handler(content_types=['text'])
-        # def get_text_messages(message):
-        #     if message.text == "sosi":
-        #         self.bot.send_message(self.group_id, "Привет, чем я могу тебе помочь?")
-        #
-        # self.bot.polling(none_stop=True, interval=0)
-
-    def send_web_hook(self, web_hook):
-        self.bot.send_message(self.group_id, web_hook)
 
 
 if __name__ == "__main__":
