@@ -1,3 +1,4 @@
+import openpyxl
 import telebot
 from telebot import types
 import pybit
@@ -34,10 +35,19 @@ class TelegramBot:
         self.bot.send_message(self.group_id, "Ваш баланс USDT: {0}".format(balance))
 
     def get_positions(self):
+        wb = openpyxl.load_workbook('main.xlsx')
+        sheet = wb['Лист1']
+        count_row = sheet.max_row
+        self.bot.send_message(self.group_id, self.search_excel_info(count_row, sheet))
+
+    def search_excel_info(self, count_row, sheet):
         positions = ""
-        for position in self.session.my_position(symbol="BTCUSDT")['result']:
-            positions += position['symbol'] + ", "
-        self.bot.send_message(self.group_id, positions)
+        for i in range(count_row - 1):
+            row_excel = sheet[f'A{int(i + 2)}'].value
+            position = self.session.my_position(symbol=row_excel)['result'][0]['position_value']
+            if position != 0:
+                positions += row_excel + "\n"
+        return positions
 
 
 if __name__ == "__main__":
