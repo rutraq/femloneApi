@@ -28,7 +28,7 @@ class TelegramBot:
             elif message.text == "Баланс":
                 self.get_balance()
 
-        self.bot.polling(none_stop=True, interval=0)
+        self.bot.infinity_polling()
 
     def get_balance(self):
         balance = round(self.session.get_wallet_balance(coin="USDT")['result']['USDT']['equity'], 2)
