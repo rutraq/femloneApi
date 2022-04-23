@@ -32,32 +32,40 @@ def open_excel(search_symbol):
     search_excel_info(search_symbol, count_row, sheet)
 
 
+leverage, percentage_of_balance, take_profit_one, closing_volume_one, take_profit_two, closing_volume_two, stop_loss_one, stop_loss_two, multi_take, qty_position_round = None
+
+
 def search_excel_info(search_symbol, count_row, sheet):
-    global leverage, percentage_of_balance, take_profit_one, closing_volume_one, take_profit_two, closing_volume_two, stop_loss_one, stop_loss_two, multitake, qty_position_round
+    global leverage, percentage_of_balance, take_profit_one, closing_volume_one, take_profit_two, closing_volume_two, \
+        stop_loss_one, stop_loss_two, multi_take, qty_position_round
     for i in range(count_row):
         row_excel = sheet[f'A{int(i + 2)}'].value
         if search_symbol.split('-')[0] == row_excel:
-            leverage = sheet[f'B{int(i + 2)}'].value
-            percentage_of_balance = sheet[f'C{int(i + 2)}'].value
-            multitake = sheet[f'D{int(i + 2)}'].value
-            take_profit_one = sheet[f'E{int(i + 2)}'].value
-            closing_volume_one = sheet[f'F{int(i + 2)}'].value
-            take_profit_two = sheet[f'G{int(i + 2)}'].value
-            closing_volume_two = sheet[f'H{int(i + 2)}'].value
-            stop_loss_one = sheet[f'I{int(i + 2)}'].value
-            stop_loss_two = sheet[f'J{int(i + 2)}'].value
-            qty_position_round = sheet[f'K{int(i + 2)}'].value
-    open_trade(search_symbol, leverage, percentage_of_balance, multitake, take_profit_one, closing_volume_one, take_profit_two, closing_volume_two, stop_loss_one, stop_loss_two, qty_position_round)
+            leverage = values_from_excel(sheet, 'B', i)
+            percentage_of_balance = values_from_excel(sheet, 'C', i)
+            multi_take = values_from_excel(sheet, 'D', i)
+            take_profit_one = values_from_excel(sheet, 'E', i)
+            closing_volume_one = values_from_excel(sheet, 'F', i)
+            take_profit_two = values_from_excel(sheet, 'G', i)
+            closing_volume_two = values_from_excel(sheet, 'H', i)
+            stop_loss_one = values_from_excel(sheet, 'I', i)
+            stop_loss_two = values_from_excel(sheet, 'J', i)
+            qty_position_round = values_from_excel(sheet, 'K', i)
+    open_trade(search_symbol)
 
 
-def volume_position(leverage, percentage_of_balance):
+def values_from_excel(sheet, letter, row):
+    return sheet[f'{letter}{int(row + 2)}'].value
+
+
+def volume_position():
     wallet_balance = session.get_wallet_balance(coin="USDT")['result']['USDT']['equity']
     balance_position = wallet_balance * percentage_of_balance / 100 * leverage
     return balance_position
 
 
-def long(search_symbol, take_profit_one, stop_loss_one, leverage, percentage_of_balance, qty_position_round):
-    price_position = volume_position(leverage, percentage_of_balance)
+def long(search_symbol):
+    price_position = volume_position()
     last_price = session.orderbook(symbol=search_symbol.split('-')[0])['result'][0]['price']
     qty_position = round(float(float(price_position) / float(last_price)), qty_position_round)
     try:
@@ -93,8 +101,8 @@ def long(search_symbol, take_profit_one, stop_loss_one, leverage, percentage_of_
     )
 
 
-def short(search_symbol, take_profit_one, stop_loss_one, leverage, percentage_of_balance, qty_position_round):
-    price_position = volume_position(leverage, percentage_of_balance)
+def short(search_symbol):
+    price_position = volume_position()
     last_price = session.orderbook(symbol=search_symbol.split('-')[0])['result'][0]['price']
     qty_position = round(float(float(price_position) / float(last_price)), qty_position_round)
     try:
@@ -130,8 +138,8 @@ def short(search_symbol, take_profit_one, stop_loss_one, leverage, percentage_of
     )
 
 
-def short_multi_take(search_symbol, take_profit_one, take_profit_two, stop_loss_one, closing_volume_one, stop_loss_two, leverage, percentage_of_balance, qty_position_round):
-    price_position = volume_position(leverage, percentage_of_balance)
+def short_multi_take(search_symbol):
+    price_position = volume_position()
     last_price = session.orderbook(symbol=search_symbol.split('-')[0])['result'][0]['price']
     qty_position = round(float(float(price_position) / float(last_price)), qty_position_round)
     try:
@@ -213,8 +221,8 @@ def short_multi_take(search_symbol, take_profit_one, take_profit_two, stop_loss_
     order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
 
 
-def long_multi_take(search_symbol, take_profit_one, take_profit_two, stop_loss_one, closing_volume_one, stop_loss_two, leverage, percentage_of_balance, qty_position_round):
-    price_position = volume_position(leverage, percentage_of_balance)
+def long_multi_take(search_symbol):
+    price_position = volume_position()
     last_price = session.orderbook(symbol=search_symbol.split('-')[0])['result'][0]['price']
     qty_position = round(float(float(price_position) / float(last_price)), qty_position_round)
     try:
@@ -296,6 +304,9 @@ def long_multi_take(search_symbol, take_profit_one, take_profit_two, stop_loss_o
     order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
 
 
+id_stop_loss_two, side = None
+
+
 def order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty):
     global id_stop_loss_two, side
     id_stop_loss_two = ""
@@ -362,15 +373,15 @@ def order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_tak
         time.sleep(4)
 
 
-def open_trade(search_symbol, leverage, percentage_of_balance, multitake, take_profit_one, closing_volume_one, take_profit_two, closing_volume_two, stop_loss_one, stop_loss_two, qty_position_round):
-    if search_symbol.split('-')[1] == "Buy" and multitake == "false":
-        long(search_symbol, take_profit_one, stop_loss_one, leverage, percentage_of_balance, qty_position_round)
-    if search_symbol.split('-')[1] == "Sell" and multitake == "false":
-        short(search_symbol, take_profit_one, stop_loss_one, leverage, percentage_of_balance, qty_position_round)
-    if search_symbol.split('-')[1] == "Buy" and multitake == "true":
-        long_multi_take(search_symbol, take_profit_one, take_profit_two, stop_loss_one, closing_volume_one, stop_loss_two, leverage, percentage_of_balance, qty_position_round)
-    if search_symbol.split('-')[1] == "Sell" and multitake == "true":
-        short_multi_take(search_symbol, take_profit_one, take_profit_two, stop_loss_one, closing_volume_one, stop_loss_two, leverage, percentage_of_balance, qty_position_round)
+def open_trade(search_symbol):
+    if search_symbol.split('-')[1] == "Buy" and multi_take == "false":
+        long(search_symbol)
+    if search_symbol.split('-')[1] == "Sell" and multi_take == "false":
+        short(search_symbol)
+    if search_symbol.split('-')[1] == "Buy" and multi_take == "true":
+        long_multi_take(search_symbol)
+    if search_symbol.split('-')[1] == "Sell" and multi_take == "true":
+        short_multi_take(search_symbol)
 
 
 if __name__ == "__main__":
