@@ -331,6 +331,7 @@ def order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_tak
         for i in information_order:
             if i['stop_order_id'] == id_first_take_profit and i['order_status'] == "Filled" and first_take_close == False:
                 session.cancel_conditional_order(symbol=search_symbol.split('-')[0], stop_order_id=id_stop_loss)
+
                 if search_symbol.split('-')[1] == "Buy":
                     side = 'Sell'
                 if search_symbol.split('-')[1] == "Sell":
@@ -347,6 +348,11 @@ def order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_tak
                             time_in_force="GoodTillCancel",
                             reduce_only=False,
                             position_idx=0)['result']['stop_order_id']
+
+                        telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y") \
+                            .send_message("-699678335", "Закрылся первый take profit по паре: {0}, по цене: {1}\n"
+                                                        "Открылся новый stop loss по цене: {2}"
+                                          .format(search_symbol, i['trigger_price'], round(stop_loss_2, round_number)))
                         print(id_stop_loss_two)
                     except pybit.exceptions.InvalidRequestError:
                         session.place_active_order(
