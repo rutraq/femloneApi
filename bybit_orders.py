@@ -304,7 +304,8 @@ class ByBit:
                     session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
                     k = 0
                 if i['stop_order_id'] == id_stop_loss and i['order_status'] == "Filled":
-                    print("Закрылись по стоп лоссу")
+                    telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y") \
+                        .send_message("-699678335", "Закрылся по stop loss по паре: {0}".format(search_symbol))
                     session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
                     k = 0
             time.sleep(4)
