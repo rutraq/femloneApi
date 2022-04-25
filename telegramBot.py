@@ -47,6 +47,8 @@ class TelegramBot:
             position = self.session.my_position(symbol=row_excel)['result'][0]['position_value']
             if position != 0:
                 positions += row_excel + "\n"
+        if positions == "":
+            positions = "Нет открытых позиций"
         return positions
 
 
