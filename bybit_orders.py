@@ -32,7 +32,16 @@ def open_excel(search_symbol):
     search_excel_info(search_symbol, count_row, sheet)
 
 
-leverage, percentage_of_balance, take_profit_one, closing_volume_one, take_profit_two, closing_volume_two, stop_loss_one, stop_loss_two, multi_take, qty_position_round = None
+leverage: str
+percentage_of_balance: float
+take_profit_one: float
+closing_volume_one: float
+take_profit_two: float
+closing_volume_two: float
+stop_loss_one: float
+stop_loss_two: float
+multi_take: float
+qty_position_round: float
 
 
 def search_excel_info(search_symbol, count_row, sheet):
@@ -110,80 +119,6 @@ def place_order_with_stop(order_type, search_symbol):
         sl_size=qty_position,
         position_idx=0
     )
-
-
-# def long(search_symbol):
-#     price_position = volume_position()
-#     last_price = session.orderbook(symbol=search_symbol.split('-')[0])['result'][0]['price']
-#     qty_position = round(float(float(price_position) / float(last_price)), qty_position_round)
-#     try:
-#         round_number = int(len(last_price.split('.')[1]))
-#     except IndexError:
-#         round_number = 0
-#     session.place_active_order(
-#         symbol=search_symbol.split('-')[0],
-#         side=search_symbol.split('-')[1],
-#         order_type="Market",
-#         qty=qty_position,
-#         time_in_force="GoodTillCancel",
-#         reduce_only=False,
-#         close_on_trigger=False,
-#         position_idx=0
-#     )
-#     price_my_position = (session.my_position(symbol=search_symbol.split('-')[0]))
-#     price = float((price_my_position['result'][0]['entry_price']))
-#     price = round(price, round_number)
-#     stop_loss = price - price * (stop_loss_one / 100)
-#     take_profit = price + price * (take_profit_one / 100)
-#
-#     session.set_trading_stop(
-#         symbol=search_symbol.split('-')[0],
-#         side=search_symbol.split('-')[1],
-#         take_profit=round(take_profit, round_number),
-#         stop_loss=round(stop_loss, round_number),
-#         tp_trigger_by="LastPrice",
-#         sl_trigger_by="LastPrice",
-#         tp_size=qty_position,
-#         sl_size=qty_position,
-#         position_idx=0
-#     )
-
-
-# def short(search_symbol):
-#     price_position = volume_position()
-#     last_price = session.orderbook(symbol=search_symbol.split('-')[0])['result'][0]['price']
-#     qty_position = round(float(float(price_position) / float(last_price)), qty_position_round)
-#     try:
-#         round_number = int(len(last_price.split('.')[1]))
-#     except IndexError:
-#         round_number = 0
-#     session.place_active_order(
-#         symbol=search_symbol.split('-')[0],
-#         side=search_symbol.split('-')[1],
-#         order_type="Market",
-#         qty=qty_position,
-#         time_in_force="GoodTillCancel",
-#         reduce_only=False,
-#         close_on_trigger=False,
-#         position_idx=0
-#     )
-#     price_my_position = (session.my_position(symbol=search_symbol.split('-')[0]))
-#     price = float((price_my_position['result'][0]['entry_price']))
-#     price = round(price, round_number)
-#     stop_loss = price + price * (stop_loss_one / 100)
-#     take_profit = price - price * (take_profit_one / 100)
-#
-#     session.set_trading_stop(
-#         symbol=search_symbol.split('-')[0],
-#         side=search_symbol.split('-')[1],
-#         take_profit=round(take_profit, round_number),
-#         stop_loss=round(stop_loss, round_number),
-#         tp_trigger_by="LastPrice",
-#         sl_trigger_by="LastPrice",
-#         tp_size=qty_position,
-#         sl_size=qty_position,
-#         position_idx=0
-#     )
 
 
 def short_multi_take(search_symbol):
@@ -305,7 +240,8 @@ def long_multi_take(search_symbol):
     order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
 
 
-id_stop_loss_two, side = None
+id_stop_loss_two: int
+side: int
 
 
 def order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty):
