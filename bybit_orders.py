@@ -4,6 +4,7 @@ import openpyxl
 from flask import Flask, request
 from threading import Thread
 import telebot
+import re
 
 session = pybit.HTTP("https://api-testnet.bybit.com",
                      api_key="XiDGurqyUmnY0Qjh4a", api_secret="NbXvPCNNMmCCpfrmIQIVeNeSly8fBb9MPviA")
@@ -14,9 +15,10 @@ app = Flask(__name__)
 @app.route("/webHookReceive", methods=["POST"])
 def make_order():
     search_symbol = request.data.decode()
-    telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", search_symbol)
-    th = Thread(target=ByBit, args=(search_symbol,))
-    th.start()
+    if re.search('^[A-Z]+-(Sell|Buy)$', search_symbol) is not None:
+        telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", search_symbol)
+        th = Thread(target=ByBit, args=(search_symbol,))
+        th.start()
     return "200"
 
 
