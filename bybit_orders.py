@@ -76,95 +76,101 @@ class ByBit:
         return balance_position
 
     def place_order(self, search_symbol):
-        price_position = self.volume_position()
-        last_price = session.orderbook(symbol=search_symbol.split('-')[0])['result'][0]['price']
-        qty_position = round(float(float(price_position) / float(last_price)), self.qty_position_round)
-        try:
-            round_number = int(len(last_price.split('.')[1]))
-        except IndexError:
-            round_number = 0
-        session.place_active_order(
-            symbol=search_symbol.split('-')[0],
-            side=search_symbol.split('-')[1],
-            order_type="Market",
-            qty=qty_position,
-            time_in_force="GoodTillCancel",
-            reduce_only=False,
-            close_on_trigger=False,
-            position_idx=0
-        )
-        return round_number, qty_position
+        if int(session.my_position(symbol=search_symbol.split('-')[0])['result'][0]['size']) == 0:
+            price_position = self.volume_position()
+            last_price = session.orderbook(symbol=search_symbol.split('-')[0])['result'][0]['price']
+            qty_position = round(float(float(price_position) / float(last_price)), self.qty_position_round)
+            try:
+                round_number = int(len(last_price.split('.')[1]))
+            except IndexError:
+                round_number = 0
+            session.place_active_order(
+                symbol=search_symbol.split('-')[0],
+                side=search_symbol.split('-')[1],
+                order_type="Market",
+                qty=qty_position,
+                time_in_force="GoodTillCancel",
+                reduce_only=False,
+                close_on_trigger=False,
+                position_idx=0
+            )
+            return round_number, qty_position
 
     def place_order_with_stop(self, order_type, search_symbol):
-        round_number, qty_position = self.place_order(search_symbol)
+        try:
+            round_number, qty_position = self.place_order(search_symbol)
 
-        price_my_position = (session.my_position(symbol=search_symbol.split('-')[0]))
-        price = float((price_my_position['result'][0]['entry_price']))
-        price = round(price, round_number)
+            price_my_position = (session.my_position(symbol=search_symbol.split('-')[0]))
+            price = float((price_my_position['result'][0]['entry_price']))
+            price = round(price, round_number)
+            if order_type == "long":
+                stop_loss = price - price * (self.stop_loss_one / 100)
+                take_profit = price + price * (self.take_profit_one / 100)
+            else:
+                stop_loss = price + price * (self.stop_loss_one / 100)
+                take_profit = price - price * (self.take_profit_one / 100)
 
-        if order_type == "long":
-            stop_loss = price - price * (self.stop_loss_one / 100)
-            take_profit = price + price * (self.take_profit_one / 100)
-        else:
-            stop_loss = price + price * (self.stop_loss_one / 100)
-            take_profit = price - price * (self.take_profit_one / 100)
-
-        session.set_trading_stop(
-            symbol=search_symbol.split('-')[0],
-            side=search_symbol.split('-')[1],
-            take_profit=round(take_profit, round_number),
-            stop_loss=round(stop_loss, round_number),
-            tp_trigger_by="LastPrice",
-            sl_trigger_by="LastPrice",
-            tp_size=qty_position,
-            sl_size=qty_position,
-            position_idx=0
-        )
+            session.set_trading_stop(
+                symbol=search_symbol.split('-')[0],
+                side=search_symbol.split('-')[1],
+                take_profit=round(take_profit, round_number),
+                stop_loss=round(stop_loss, round_number),
+                tp_trigger_by="LastPrice",
+                sl_trigger_by="LastPrice",
+                tp_size=qty_position,
+                sl_size=qty_position,
+                position_idx=0
+            )
+        except TypeError:
+            print('Позиция уже открыта')
 
     def short_multi_take(self, search_symbol):
-        round_number, qty_position = self.place_order(search_symbol)
-
-        price = float((session.my_position(symbol=search_symbol.split('-')[0])['result'][0]['entry_price']))
-        stop_loss = price + price * (float(self.stop_loss_one) / 100)
-        stop_loss = stop_loss - stop_loss * 0.1 / 100
-        bs_price = stop_loss * 0.1 / 100 + stop_loss
-
-        stop_loss_2 = price - price * (float(self.stop_loss_two) / 100)
-        stop_loss_2 = stop_loss_2 - stop_loss_2 * 0.1 / 100
-        bs_price_2 = stop_loss * 0.1 / 100 + stop_loss_2
-
-        take_profit = price - price * (float(self.take_profit_one) / 100)
-        take_profit2 = price - price * (float(self.take_profit_two) / 100)
-
-        two_take_profit_qty = self.set_take_profit(qty_position, search_symbol, take_profit, take_profit2, round_number)
-
         try:
-            session.place_conditional_order(
-                symbol=search_symbol.split('-')[0],
-                side="Buy",
-                order_type="Market",
-                trigger_by="LastPrice",
-                qty=qty_position,
-                base_price=round(stop_loss, round_number),
-                stop_px=round(bs_price, round_number),
-                time_in_force="GoodTillCancel",
-                reduce_only=False,
-                position_idx=0
-            )
-        except pybit.exceptions.InvalidRequestError:
-            session.place_conditional_order(
-                symbol=search_symbol.split('-')[0],
-                side="Buy",
-                order_type="Market",
-                trigger_by="LastPrice",
-                qty=qty_position,
-                base_price=round(stop_loss, round_number),
-                stop_px=round(bs_price, round_number),
-                time_in_force="GoodTillCancel",
-                reduce_only=False,
-                position_idx=0
-            )
-        self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
+            round_number, qty_position = self.place_order(search_symbol)
+
+            price = float((session.my_position(symbol=search_symbol.split('-')[0])['result'][0]['entry_price']))
+            stop_loss = price + price * (float(self.stop_loss_one) / 100)
+            stop_loss = stop_loss - stop_loss * 0.1 / 100
+            bs_price = stop_loss * 0.1 / 100 + stop_loss
+
+            stop_loss_2 = price - price * (float(self.stop_loss_two) / 100)
+            stop_loss_2 = stop_loss_2 - stop_loss_2 * 0.1 / 100
+            bs_price_2 = stop_loss * 0.1 / 100 + stop_loss_2
+
+            take_profit = price - price * (float(self.take_profit_one) / 100)
+            take_profit2 = price - price * (float(self.take_profit_two) / 100)
+
+            two_take_profit_qty = self.set_take_profit(qty_position, search_symbol, take_profit, take_profit2, round_number)
+
+            try:
+                session.place_conditional_order(
+                    symbol=search_symbol.split('-')[0],
+                    side="Buy",
+                    order_type="Market",
+                    trigger_by="LastPrice",
+                    qty=qty_position,
+                    base_price=round(stop_loss, round_number),
+                    stop_px=round(bs_price, round_number),
+                    time_in_force="GoodTillCancel",
+                    reduce_only=False,
+                    position_idx=0
+                )
+            except pybit.exceptions.InvalidRequestError:
+                session.place_conditional_order(
+                    symbol=search_symbol.split('-')[0],
+                    side="Buy",
+                    order_type="Market",
+                    trigger_by="LastPrice",
+                    qty=qty_position,
+                    base_price=round(stop_loss, round_number),
+                    stop_px=round(bs_price, round_number),
+                    time_in_force="GoodTillCancel",
+                    reduce_only=False,
+                    position_idx=0
+                )
+            self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
+        except TypeError:
+            print('Позиция уже открыта')
 
     def set_take_profit(self, qty_position, search_symbol, take_profit, take_profit2, round_number):
         first_take_profit_qty = round(qty_position * self.closing_volume_one / 100, self.qty_position_round)
@@ -193,49 +199,53 @@ class ByBit:
         return two_take_profit_qty
 
     def long_multi_take(self, search_symbol):
-        round_number, qty_position = self.place_order(search_symbol)
-
-        price = float((session.my_position(symbol=search_symbol.split('-')[0])['result'][0]['entry_price']))
-        stop_loss = price - price * (float(self.stop_loss_one) / 100)
-        stop_loss = stop_loss + stop_loss * 0.1 / 100
-        bs_price = stop_loss - stop_loss * 0.1 / 100
-
-        stop_loss_2 = price + price * (float(self.stop_loss_two) / 100)
-        stop_loss_2 = stop_loss_2 + stop_loss_2 * 0.1 / 100
-        bs_price_2 = stop_loss_2 - stop_loss_2 * 0.1 / 100
-
-        take_profit = price + price * (float(self.take_profit_one) / 100)
-        take_profit2 = price + price * (float(self.take_profit_two) / 100)
-
-        two_take_profit_qty = self.set_take_profit(qty_position, search_symbol, take_profit, take_profit2, round_number)
-
         try:
-            session.place_conditional_order(
-                symbol=search_symbol.split('-')[0],
-                side="Sell",
-                order_type="Market",
-                trigger_by="LastPrice",
-                qty=qty_position,
-                base_price=round(stop_loss, round_number),
-                stop_px=round(bs_price, round_number),
-                time_in_force="GoodTillCancel",
-                reduce_only=False,
-                position_idx=0
-            )
-        except pybit.exceptions.InvalidRequestError:
-            session.place_conditional_order(
-                symbol=search_symbol.split('-')[0],
-                side="Sell",
-                order_type="Market",
-                trigger_by="LastPrice",
-                qty=qty_position,
-                base_price=round(stop_loss, round_number),
-                stop_px=round(bs_price, round_number),
-                time_in_force="GoodTillCancel",
-                reduce_only=False,
-                position_idx=0
-            )
-        self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
+            round_number, qty_position = self.place_order(search_symbol)
+
+            price = float((session.my_position(symbol=search_symbol.split('-')[0])['result'][0]['entry_price']))
+            stop_loss = price - price * (float(self.stop_loss_one) / 100)
+            stop_loss = stop_loss + stop_loss * 0.1 / 100
+            bs_price = stop_loss - stop_loss * 0.1 / 100
+
+            stop_loss_2 = price + price * (float(self.stop_loss_two) / 100)
+            stop_loss_2 = stop_loss_2 + stop_loss_2 * 0.1 / 100
+            bs_price_2 = stop_loss_2 - stop_loss_2 * 0.1 / 100
+
+            take_profit = price + price * (float(self.take_profit_one) / 100)
+            take_profit2 = price + price * (float(self.take_profit_two) / 100)
+
+            two_take_profit_qty = self.set_take_profit(qty_position, search_symbol, take_profit, take_profit2, round_number)
+
+            try:
+                session.place_conditional_order(
+                    symbol=search_symbol.split('-')[0],
+                    side="Sell",
+                    order_type="Market",
+                    trigger_by="LastPrice",
+                    qty=qty_position,
+                    base_price=round(stop_loss, round_number),
+                    stop_px=round(bs_price, round_number),
+                    time_in_force="GoodTillCancel",
+                    reduce_only=False,
+                    position_idx=0
+                )
+            except pybit.exceptions.InvalidRequestError:
+                session.place_conditional_order(
+                    symbol=search_symbol.split('-')[0],
+                    side="Sell",
+                    order_type="Market",
+                    trigger_by="LastPrice",
+                    qty=qty_position,
+                    base_price=round(stop_loss, round_number),
+                    stop_px=round(bs_price, round_number),
+                    time_in_force="GoodTillCancel",
+                    reduce_only=False,
+                    position_idx=0
+                )
+
+            self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
+        except TypeError:
+            print('Позиция уже открыта')
 
     @staticmethod
     def order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty):
@@ -253,9 +263,14 @@ class ByBit:
                     a = 0
             time.sleep(4)
         id_first_take_profit = test[2]['stop_order_id']
+        print(id_first_take_profit)
         id_two_take_profit = test[1]['stop_order_id']
+        print(id_two_take_profit)
         id_stop_loss = test[0]['stop_order_id']
+        print(id_stop_loss)
         while k == 1:
+            test = search_symbol.split('-')[0]
+            print(f'Отслеживаем {test}')
             information_order = session.get_conditional_order(symbol=search_symbol.split('-')[0])['result']['data']
             for i in information_order:
                 if i['stop_order_id'] == id_first_take_profit and i['order_status'] == "Filled" and first_take_close:
