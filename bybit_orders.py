@@ -263,14 +263,9 @@ class ByBit:
                     a = 0
             time.sleep(4)
         id_first_take_profit = test[2]['stop_order_id']
-        print(id_first_take_profit)
         id_two_take_profit = test[1]['stop_order_id']
-        print(id_two_take_profit)
         id_stop_loss = test[0]['stop_order_id']
-        print(id_stop_loss)
         while k == 1:
-            test = search_symbol.split('-')[0]
-            print(f'Отслеживаем {test}')
             information_order = session.get_conditional_order(symbol=search_symbol.split('-')[0])['result']['data']
             for i in information_order:
                 if i['stop_order_id'] == id_first_take_profit and i['order_status'] == "Filled" and first_take_close:
