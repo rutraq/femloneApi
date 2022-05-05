@@ -121,6 +121,12 @@ class ByBit:
                 sl_size=qty_position,
                 position_idx=0
             )
+            order_name = re.search("^[A-Z]+", search_symbol)
+            message = "Сделка: {0}\nТип: {1}\nЦена: {2}\nTake profit: {3}\nStop loss: {4}".format(order_name[0],
+                                                                                                 order_type,
+                                                                                                 price, take_profit,
+                                                                                                 stop_loss)
+            telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", message)
         except TypeError:
             print('Позиция уже открыта')
 
@@ -140,7 +146,8 @@ class ByBit:
             take_profit = price - price * (float(self.take_profit_one) / 100)
             take_profit2 = price - price * (float(self.take_profit_two) / 100)
 
-            two_take_profit_qty = self.set_take_profit(qty_position, search_symbol, take_profit, take_profit2, round_number)
+            two_take_profit_qty = self.set_take_profit(qty_position, search_symbol, take_profit, take_profit2,
+                                                       round_number)
 
             try:
                 session.place_conditional_order(
@@ -214,7 +221,8 @@ class ByBit:
             take_profit = price + price * (float(self.take_profit_one) / 100)
             take_profit2 = price + price * (float(self.take_profit_two) / 100)
 
-            two_take_profit_qty = self.set_take_profit(qty_position, search_symbol, take_profit, take_profit2, round_number)
+            two_take_profit_qty = self.set_take_profit(qty_position, search_symbol, take_profit, take_profit2,
+                                                       round_number)
 
             try:
                 session.place_conditional_order(
