@@ -122,13 +122,29 @@ class ByBit:
                 position_idx=0
             )
             order_name = re.search("^[A-Z]+", search_symbol)
-            message = "Сделка: {0}\nТип: {1}\nЦена: {2}\nTake profit: {3}\nStop loss: {4}".format(order_name[0],
-                                                                                                  order_type,
-                                                                                                  price, take_profit,
-                                                                                                  stop_loss)
-            telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", message)
+            message = "_Сделка:_ *{0}*\n_Тип:_ {1}\n_Цена:_ {2}\n_Take profit:_ {3}\n_Stop loss:_ {4}".format(
+                order_name[0],
+                order_type,
+                price, take_profit,
+                stop_loss)
+            telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", message,
+                                                                                           parse_mode="Markdown")
         except TypeError:
             print('Позиция уже открыта')
+
+    @staticmethod
+    def send_order_to_telegram(order_name, multi_type, price, take_profit, take_profit2,
+                               stop_loss, stop_loss_2):
+        message = "_Сделка:_ *{0}*\n_Тип:_ {1}\n_Цена:_ {2}\n_Take profit 1:_ {3}\n" \
+                  "_Take profit 2:_ {4}\n_Stop loss 1:_ {5}\n_Stop loss 2:_ {6}".format(order_name[0],
+                                                                                        multi_type,
+                                                                                        price,
+                                                                                        round(take_profit, 2),
+                                                                                        round(take_profit2, 2),
+                                                                                        round(stop_loss, 2),
+                                                                                        round(stop_loss_2, 2))
+        telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", message,
+                                                                                       parse_mode="Markdown")
 
     def short_multi_take(self, search_symbol):
         try:
@@ -176,27 +192,13 @@ class ByBit:
                     position_idx=0
                 )
 
-                order_name = re.search("^[A-Z]+", search_symbol)
-                self.send_order_to_telegram(order_name[0], "Long multi take", price, take_profit, take_profit2,
-                                            stop_loss, stop_loss_2)
+            order_name = re.search("^[A-Z]+", search_symbol)
+            self.send_order_to_telegram(order_name, "Short multi take", price, take_profit, take_profit2,
+                                        stop_loss, stop_loss_2)
 
             self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
         except TypeError:
             print('Позиция уже открыта')
-
-    @staticmethod
-    def send_order_to_telegram(order_name, multi_type, price, take_profit, take_profit2,
-                               stop_loss, stop_loss_2):
-        message = "_Сделка:_ *{0}*\n_Тип:_ {1}\n_Цена:_ {2}\n_Take profit 1:_ {3}\n" \
-                  "_Take profit 2:_ {4}\n_Stop loss 1:_ {5}\n_Stop loss 2:_ {6}".format(order_name[0],
-                                                                                        multi_type,
-                                                                                        price,
-                                                                                        round(take_profit, 2),
-                                                                                        round(take_profit2, 2),
-                                                                                        round(stop_loss, 2),
-                                                                                        round(stop_loss_2, 2))
-        telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", message,
-                                                                                       parse_mode="Markdown")
 
     def set_take_profit(self, qty_position, search_symbol, take_profit, take_profit2, round_number):
         first_take_profit_qty = round(qty_position * self.closing_volume_one / 100, self.qty_position_round)
@@ -271,7 +273,7 @@ class ByBit:
                 )
 
             order_name = re.search("^[A-Z]+", search_symbol)
-            self.send_order_to_telegram(order_name[0], "Short multi take", price, take_profit, take_profit2,
+            self.send_order_to_telegram(order_name, "Long multi take", price, take_profit, take_profit2,
                                         stop_loss, stop_loss_2)
 
             self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
