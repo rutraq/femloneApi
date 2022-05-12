@@ -6,8 +6,8 @@ from threading import Thread
 import telebot
 import re
 
-session = pybit.HTTP("https://api-testnet.bybit.com",
-                     api_key="XiDGurqyUmnY0Qjh4a", api_secret="NbXvPCNNMmCCpfrmIQIVeNeSly8fBb9MPviA")
+session = pybit.HTTP("https://api.bybit.com",
+                     api_key="TCBkATA9S2SdcigMWG", api_secret="PoGWXQGKZrHQ0sTZh5GtcvfkSPdy76hZM5LH")
 
 app = Flask(__name__)
 
