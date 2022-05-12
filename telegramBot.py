@@ -9,8 +9,8 @@ class TelegramBot:
         self.token = "5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y"
         self.bot = telebot.TeleBot(self.token)
         self.group_id = "-699678335"
-        self.session = pybit.HTTP("https://api-testnet.bybit.com",
-                                  api_key="XiDGurqyUmnY0Qjh4a", api_secret="NbXvPCNNMmCCpfrmIQIVeNeSly8fBb9MPviA")
+        self.session = pybit.HTTP("https://api.bybit.com",
+                                  api_key="TCBkATA9S2SdcigMWG", api_secret="PoGWXQGKZrHQ0sTZh5GtcvfkSPdy76hZM5LH")
 
         markup = types.ReplyKeyboardMarkup(row_width=2)
         command1 = types.KeyboardButton('Баланс')
