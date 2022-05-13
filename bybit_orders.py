@@ -6,8 +6,8 @@ from threading import Thread
 import telebot
 import re
 
-session = pybit.HTTP("https://api-testnet.bybit.com",
-                     api_key="XiDGurqyUmnY0Qjh4a", api_secret="NbXvPCNNMmCCpfrmIQIVeNeSly8fBb9MPviA")
+session = pybit.HTTP("https://api.bybit.com",
+                     api_key="TCBkATA9S2SdcigMWG", api_secret="PoGWXQGKZrHQ0sTZh5GtcvfkSPdy76hZM5LH")
 
 app = Flask(__name__)
 
@@ -190,8 +190,8 @@ class ByBit:
                     )
 
             order_name = re.search("^[A-Z]+", search_symbol)
-            # self.send_order_to_telegram(order_name, "Short multi take", price, take_profit, take_profit2,
-            #                             stop_loss, stop_loss_2)
+            self.send_order_to_telegram(order_name, "Short multi take", price, take_profit, take_profit2,
+                                        stop_loss, stop_loss_2)
 
             self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
         except TypeError:
@@ -267,8 +267,8 @@ class ByBit:
                     )
 
                 order_name = re.search("^[A-Z]+", search_symbol)
-                # self.send_order_to_telegram(order_name, "Long multi take", price, take_profit, take_profit2,
-                #                                 stop_loss, stop_loss_2)
+                self.send_order_to_telegram(order_name, "Long multi take", price, take_profit, take_profit2,
+                                                stop_loss, stop_loss_2)
 
                 self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
         except TypeError:
