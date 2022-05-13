@@ -152,12 +152,12 @@ class ByBit:
 
             price = float((session.my_position(symbol=search_symbol.split('-')[0])['result'][0]['entry_price']))
             stop_loss = price + price * (float(self.stop_loss_one) / 100)
-            stop_loss = stop_loss - stop_loss * 0.1 / 100
-            bs_price = stop_loss * 0.1 / 100 + stop_loss
+            stop_loss = stop_loss - stop_loss * 0.2 / 100
+            bs_price = stop_loss * 0.2 / 100 + stop_loss
 
             stop_loss_2 = price - price * (float(self.stop_loss_two) / 100)
-            stop_loss_2 = stop_loss_2 - stop_loss_2 * 0.1 / 100
-            bs_price_2 = stop_loss * 0.1 / 100 + stop_loss_2
+            stop_loss_2 = stop_loss_2 - stop_loss_2 * 0.2 / 100
+            bs_price_2 = stop_loss * 0.2 / 100 + stop_loss_2
 
             take_profit = price - price * (float(self.take_profit_one) / 100)
             take_profit2 = price - price * (float(self.take_profit_two) / 100)
@@ -232,12 +232,12 @@ class ByBit:
 
             price = float((session.my_position(symbol=search_symbol.split('-')[0])['result'][0]['entry_price']))
             stop_loss = price - price * (float(self.stop_loss_one) / 100)
-            stop_loss = stop_loss + stop_loss * 0.1 / 100
-            bs_price = stop_loss - stop_loss * 0.1 / 100
+            stop_loss = stop_loss + stop_loss * 0.2 / 100
+            bs_price = stop_loss - stop_loss * 0.2 / 100
 
             stop_loss_2 = price + price * (float(self.stop_loss_two) / 100)
-            stop_loss_2 = stop_loss_2 + stop_loss_2 * 0.1 / 100
-            bs_price_2 = stop_loss_2 - stop_loss_2 * 0.1 / 100
+            stop_loss_2 = stop_loss_2 + stop_loss_2 * 0.2 / 100
+            bs_price_2 = stop_loss_2 - stop_loss_2 * 0.2 / 100
 
             take_profit = price + price * (float(self.take_profit_one) / 100)
             take_profit2 = price + price * (float(self.take_profit_two) / 100)
