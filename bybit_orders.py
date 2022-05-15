@@ -5,6 +5,7 @@ from flask import Flask, request
 from threading import Thread
 import telebot
 import re
+from datetime import datetime
 
 session = pybit.HTTP("https://api.bybit.com",
                      api_key="TCBkATA9S2SdcigMWG", api_secret="PoGWXQGKZrHQ0sTZh5GtcvfkSPdy76hZM5LH")
@@ -18,8 +19,20 @@ def make_order():
     if re.search('^[A-Z]+-(Sell|Buy)$', search_symbol) is not None:
         telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", search_symbol)
         th = Thread(target=ByBit, args=(search_symbol,))
-        th.start()
+        try:
+            th.start()
+        except Exception as err:
+            record_exceptions(err)
     return "200"
+
+
+def record_exceptions(err):
+    now = datetime.today().strftime("%d-%m-%Y %H:%M")
+    telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
+                                                                                   "Новая ошибка на сервере!")
+    with open("errors.txt", 'w+') as file:
+        error = "{0}  {1}\n".format(now, err)
+        file.write(error)
 
 
 @app.route("/check", methods=["GET"])
