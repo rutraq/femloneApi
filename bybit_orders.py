@@ -202,9 +202,9 @@ class ByBit:
                         position_idx=0
                     )
 
-            # order_name = re.search("^[A-Z]+", search_symbol)
-            # self.send_order_to_telegram(order_name, "Short multi take", price, take_profit, take_profit2,
-            #                             stop_loss, stop_loss_2)
+            order_name = re.search("^[A-Z]+", search_symbol)
+            self.send_order_to_telegram(order_name, "Short multi take", price, take_profit, take_profit2,
+                                        stop_loss, stop_loss_2)
 
             self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
         except TypeError:
@@ -302,14 +302,13 @@ class ByBit:
                         reduce_only=False,
                         position_idx=0
                     )
-            # order_name = re.search("^[A-Z]+", search_symbol)
-            # self.send_order_to_telegram(order_name, "Long multi take", price, take_profit, take_profit2,
-            #                                     stop_loss, stop_loss_2)
+            order_name = re.search("^[A-Z]+", search_symbol)
+            self.send_order_to_telegram(order_name, "Long multi take", price, take_profit, take_profit2,
+                                                stop_loss, stop_loss_2)
 
             self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
         except TypeError:
             print('Позиция уже открыта')
-
 
     @staticmethod
     def order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty):
