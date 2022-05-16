@@ -56,11 +56,12 @@ class TelegramBot:
         return positions
 
     def get_errors(self):
-        if os.path.getsize("errors.txt") != 0 and os.path.isfile("errors.txt"):
-            with open("errors.txt", 'rb') as file:
-                self.bot.send_document(self.group_id, file)
-        else:
-            self.bot.send_message(self.group_id, "Ошибок нет")
+        if os.path.isfile("errors.txt"):
+            if os.path.getsize("errors.txt") != 0:
+                with open("errors.txt", 'rb') as file:
+                    self.bot.send_document(self.group_id, file)
+            else:
+                self.bot.send_message(self.group_id, "Ошибок нет")
 
 
 if __name__ == "__main__":
