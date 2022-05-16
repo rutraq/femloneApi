@@ -2,6 +2,7 @@ import openpyxl
 import telebot
 from telebot import types
 import pybit
+import os
 
 
 class TelegramBot:
@@ -16,7 +17,8 @@ class TelegramBot:
         command1 = types.KeyboardButton('Баланс')
         command2 = types.KeyboardButton('Пидор ли женя?')
         command3 = types.KeyboardButton('Открытые позиции')
-        markup.add(command1, command2, command3)
+        command4 = types.KeyboardButton('Ошибки')
+        markup.add(command1, command2, command3, command4)
         self.bot.send_message(self.group_id, "Выберите команду:", reply_markup=markup)
 
         @self.bot.message_handler(content_types=['text'])
@@ -27,6 +29,8 @@ class TelegramBot:
                 self.get_positions()
             elif message.text == "Баланс":
                 self.get_balance()
+            elif message.text == "Ошибки":
+                self.get_errors()
 
         self.bot.infinity_polling()
 
@@ -50,6 +54,13 @@ class TelegramBot:
         if positions == "":
             positions = "Нет открытых позиций"
         return positions
+
+    def get_errors(self):
+        if os.path.getsize("errors.txt") != 0:
+            with open("errors.txt", 'rb') as file:
+                self.bot.send_document(self.group_id, file)
+        else:
+            self.bot.send_message(self.group_id, "Ошибок нет")
 
 
 if __name__ == "__main__":
