@@ -62,6 +62,8 @@ class TelegramBot:
                     self.bot.send_document(self.group_id, file)
             else:
                 self.bot.send_message(self.group_id, "Ошибок нет")
+        else:
+            self.bot.send_message(self.group_id, "Ошибок нет")
 
 
 if __name__ == "__main__":
