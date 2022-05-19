@@ -19,10 +19,7 @@ def make_order():
     if re.search('^[A-Z]+-(Sell|Buy)$', search_symbol) is not None:
         telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", search_symbol)
         th = Thread(target=ByBit, args=(search_symbol,))
-        try:
-            th.start()
-        except Exception as err:
-            record_exceptions(err)
+        th.start()
     return "200"
 
 
@@ -55,7 +52,10 @@ class ByBit:
         self.id_stop_loss_two = None
         self.side = None
 
-        self.open_excel(search_symbol)
+        try:
+            self.open_excel(search_symbol)
+        except Exception as err:
+            record_exceptions(err)
 
     def open_excel(self, search_symbol):
         wb = openpyxl.load_workbook('main.xlsx')
