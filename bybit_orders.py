@@ -143,7 +143,8 @@ class ByBit:
             telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", message,
                                                                                            parse_mode="Markdown")
         except TypeError:
-            print('Позиция уже открыта')
+            # Позиция уже открыта
+            pass
 
     @staticmethod
     def send_order_to_telegram(order_name, multi_type, price, take_profit, take_profit2,
@@ -208,7 +209,8 @@ class ByBit:
 
             self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
         except TypeError:
-            print('Позиция уже открыта')
+            # Позиция уже открыта
+            pass
 
     def set_take_profit(self, qty_position, search_symbol, take_profit, take_profit2, round_number):
         try:
@@ -308,7 +310,8 @@ class ByBit:
 
             self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
         except TypeError:
-            print('Позиция уже открыта')
+            # Позиция уже открыта
+            pass
 
     @staticmethod
     def order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty):
@@ -331,11 +334,10 @@ class ByBit:
         id_two_take_profit = test[1]['stop_order_id']
         id_stop_loss = test[0]['stop_order_id']
         while k == 1:
-            print(k)
             information_order = session.get_conditional_order(symbol=search_symbol.split('-')[0])['result']['data']
             for i in information_order:
                 if i['stop_order_id'] == id_first_take_profit and i['order_status'] == "Filled" and first_take_close == False:
-                    print('закрыли первый тейк')
+                    # закрыли первый тейк
                     try:
                         session.cancel_conditional_order(symbol=search_symbol.split('-')[0], stop_order_id=id_stop_loss)
                     except:
@@ -357,14 +359,13 @@ class ByBit:
                             time_in_force="GoodTillCancel",
                             reduce_only=False,
                             position_idx=0)['result']['stop_order_id']
-                        print('открыли второй стоп')
                         telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y") \
                             .send_message("-699678335", "Закрылся первый take profit по паре: {0}, по цене: {1}\n"
                                                         "Открылся новый stop loss по цене: {2}"
                                             .format(search_symbol, i['trigger_price'],
                                                     round(stop_loss_2, round_number)))
                     except pybit.exceptions.InvalidRequestError:
-                        print('цена второго стопа выше чем цена')
+                        # цена второго стопа выше чем цена
                         session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
                         session.place_active_order(
                             symbol=search_symbol.split('-')[0],
@@ -383,7 +384,7 @@ class ByBit:
 
                     first_take_close = True
                 if i['stop_order_id'] == id_two_take_profit and i['order_status'] == "Filled":
-                    print("закрыли второй тейк")
+                    # закрыли второй тейк
                     session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
                     first_take_close = False
                     id_first_take_profit = ""
@@ -392,14 +393,14 @@ class ByBit:
                     k = 0
                 if i['stop_order_id'] == id_stop_loss_two and i['order_status'] == "Filled":
                     session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
-                    print("закрыли второй стоп")
+                    # закрыли второй стоп
                     first_take_close = False
                     id_first_take_profit = ""
                     id_two_take_profit = ""
                     id_stop_loss = ""
                     k = 0
                 if i['stop_order_id'] == id_stop_loss and i['order_status'] == "Filled":
-                    print("вылетели по первому стопу")
+                    # вылетели по первому стопу
                     telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y") \
                         .send_message("-699678335", "Закрылся по stop loss по паре: {0}".format(search_symbol))
                     session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
