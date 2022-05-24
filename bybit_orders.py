@@ -165,11 +165,11 @@ class ByBit:
             round_number, qty_position = self.place_order(search_symbol)
             price = float((session.my_position(symbol=search_symbol.split('-')[0])['result'][0]['entry_price']))
             stop_loss = price + price * (float(self.stop_loss_one) / 100)
-            stop_loss = stop_loss - stop_loss * 0.2 / 100
-            bs_price = stop_loss * 0.2 / 100 + stop_loss
+            stop_loss = stop_loss - stop_loss * 0.25 / 100
+            bs_price = stop_loss * 0.25 / 100 + stop_loss
             stop_loss_2 = price - price * (float(self.stop_loss_two) / 100)
-            stop_loss_2 = stop_loss_2 - stop_loss_2 * 0.2 / 100
-            bs_price_2 = stop_loss * 0.2 / 100 + stop_loss_2
+            stop_loss_2 = stop_loss_2 - stop_loss_2 * 0.25 / 100
+            bs_price_2 = stop_loss * 0.25 / 100 + stop_loss_2
             take_profit = price - price * (float(self.take_profit_one) / 100)
             take_profit2 = price - price * (float(self.take_profit_two) / 100)
             two_take_profit_qty = self.set_take_profit(qty_position, search_symbol, take_profit, take_profit2,
@@ -267,11 +267,11 @@ class ByBit:
             round_number, qty_position = self.place_order(search_symbol)
             price = float((session.my_position(symbol=search_symbol.split('-')[0])['result'][0]['entry_price']))
             stop_loss = price - price * (float(self.stop_loss_one) / 100)
-            stop_loss = stop_loss + stop_loss * 0.2 / 100
-            bs_price = stop_loss - stop_loss * 0.2 / 100
+            stop_loss = stop_loss + stop_loss * 0.25 / 100
+            bs_price = stop_loss - stop_loss * 0.25 / 100
             stop_loss_2 = price + price * (float(self.stop_loss_two) / 100)
-            stop_loss_2 = stop_loss_2 + stop_loss_2 * 0.2 / 100
-            bs_price_2 = stop_loss_2 - stop_loss_2 * 0.2 / 100
+            stop_loss_2 = stop_loss_2 + stop_loss_2 * 0.25 / 100
+            bs_price_2 = stop_loss_2 - stop_loss_2 * 0.25 / 100
             take_profit = price + price * (float(self.take_profit_one) / 100)
             take_profit2 = price + price * (float(self.take_profit_two) / 100)
             two_take_profit_qty = self.set_take_profit(qty_position, search_symbol, take_profit, take_profit2,
@@ -336,7 +336,8 @@ class ByBit:
         while k == 1:
             information_order = session.get_conditional_order(symbol=search_symbol.split('-')[0])['result']['data']
             for i in information_order:
-                if i['stop_order_id'] == id_first_take_profit and i['order_status'] == "Filled" and first_take_close == False:
+                if i['stop_order_id'] == id_first_take_profit and i['order_status'] == "Filled" \
+                        and first_take_close == False and i['stop_order_id'] != "" and id_first_take_profit != "":
                     # закрыли первый тейк
                     try:
                         session.cancel_conditional_order(symbol=search_symbol.split('-')[0], stop_order_id=id_stop_loss)
@@ -362,8 +363,8 @@ class ByBit:
                         telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y") \
                             .send_message("-699678335", "Закрылся первый take profit по паре: {0}, по цене: {1}\n"
                                                         "Открылся новый stop loss по цене: {2}"
-                                            .format(search_symbol, i['trigger_price'],
-                                                    round(stop_loss_2, round_number)))
+                                          .format(search_symbol, i['trigger_price'],
+                                                  round(stop_loss_2, round_number)))
                     except pybit.exceptions.InvalidRequestError:
                         # цена второго стопа выше чем цена
                         session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
@@ -383,7 +384,8 @@ class ByBit:
                         id_stop_loss = ""
 
                     first_take_close = True
-                if i['stop_order_id'] == id_two_take_profit and i['order_status'] == "Filled":
+                if i['stop_order_id'] == id_two_take_profit and i['order_status'] == "Filled" \
+                        and i['stop_order_id'] != "" and id_two_take_profit != "":
                     # закрыли второй тейк
                     session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
                     first_take_close = False
@@ -391,7 +393,8 @@ class ByBit:
                     id_two_take_profit = ""
                     id_stop_loss = ""
                     k = 0
-                if i['stop_order_id'] == id_stop_loss_two and i['order_status'] == "Filled":
+                if i['stop_order_id'] == id_stop_loss_two and i['order_status'] == "Filled" \
+                        and i['stop_order_id'] != "" and id_stop_loss_two != "":
                     session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
                     # закрыли второй стоп
                     first_take_close = False
@@ -399,7 +402,8 @@ class ByBit:
                     id_two_take_profit = ""
                     id_stop_loss = ""
                     k = 0
-                if i['stop_order_id'] == id_stop_loss and i['order_status'] == "Filled":
+                if i['stop_order_id'] == id_stop_loss and i['order_status'] == "Filled" \
+                        and i['stop_order_id'] != "" and id_stop_loss != "":
                     # вылетели по первому стопу
                     telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y") \
                         .send_message("-699678335", "Закрылся по stop loss по паре: {0}".format(search_symbol))
