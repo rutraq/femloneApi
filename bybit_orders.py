@@ -190,6 +190,8 @@ class ByBit:
                         position_idx=0
                     )
                 except pybit.exceptions.InvalidRequestError:
+                    telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y") \
+                        .send_message("-699678335", "Не выставился stopp loss")
                     session.place_conditional_order(
                         symbol=search_symbol.split('-')[0],
                         side="Buy",
@@ -292,6 +294,8 @@ class ByBit:
                         position_idx=0
                     )
                 except pybit.exceptions.InvalidRequestError:
+                    telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y") \
+                        .send_message("-699678335", "Не выставился stopp loss")
                     session.place_conditional_order(
                         symbol=search_symbol.split('-')[0],
                         side="Sell",
