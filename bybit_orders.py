@@ -55,34 +55,6 @@ class ByBit:
         self.id_stop_loss_two = None
         self.side = None
 
-        self.open_excel(search_symbol)
-
-    def open_excel(self, search_symbol):
-        wb = openpyxl.load_workbook('main.xlsx')
-        sheet = wb['Лист1']
-        count_row = sheet.max_row
-        self.search_excel_info(search_symbol, count_row, sheet)
-
-    def search_excel_info(self, search_symbol, count_row, sheet):
-        for i in range(count_row):
-            row_excel = sheet[f'A{int(i + 2)}'].value
-            if search_symbol.split('-')[0] == row_excel:
-                self.leverage = self.values_from_excel(sheet, 'B', i)
-                self.percentage_of_balance = self.values_from_excel(sheet, 'C', i)
-                self.multi_take = self.values_from_excel(sheet, 'D', i)
-                self.take_profit_one = self.values_from_excel(sheet, 'E', i)
-                self.closing_volume_one = self.values_from_excel(sheet, 'F', i)
-                self.take_profit_two = self.values_from_excel(sheet, 'G', i)
-                self.closing_volume_two = self.values_from_excel(sheet, 'H', i)
-                self.stop_loss_one = self.values_from_excel(sheet, 'I', i)
-                self.stop_loss_two = self.values_from_excel(sheet, 'J', i)
-                self.qty_position_round = self.values_from_excel(sheet, 'K', i)
-        self.open_trade(search_symbol)
-
-    @staticmethod
-    def values_from_excel(sheet, letter, row):
-        return sheet[f'{letter}{int(row + 2)}'].value
-
     def volume_position(self):
         wallet_balance = session.get_wallet_balance(coin="USDT")['result']['USDT']['equity']
         balance_position = wallet_balance * self.percentage_of_balance / 100 * self.leverage
