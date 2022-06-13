@@ -154,7 +154,6 @@ def open_second_stop_loss(main_information, balance_position):
     return second_stop_id
 
 
-
 def get_name(dictionary):
     return dictionary['trigger_price']
 
