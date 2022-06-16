@@ -38,8 +38,8 @@ class ByBit:
     def __init__(self, strings):
         self.check = strings.split("&&")
         self.main_information = []
-        self.round_price = {"BTCUSDT": 1, "ETHUSDT": 2, "NEARUSDT": 3}
-        self.round_volume = {"BTCUSDT": 3, "ETHUSDT": 2, "NEARUSDT": 1}
+        self.round_price = {"BTCUSDT": 1, "ETHUSDT": 2, "SOLUSDT": 3}
+        self.round_volume = {"BTCUSDT": 3, "ETHUSDT": 2, "SOLUSDT": 1}
         self.balance_position = None
         for i in check:
             k = i.split(":")[1]
@@ -54,11 +54,14 @@ class ByBit:
     def volume_position(self):
         if self.main_information[0] == "false":
             leverage = self.main_information[6]
+            percent_balance = self.main_information[7]
         else:
             leverage = self.main_information[10]
+            percent_balance = self.main_information[11]
+
         wallet_balance = self.session_auth.get_wallet_balance(coin="USDT")['result']['USDT']['equity']
         last_price = self.session_auth.orderbook(symbol=self.main_information[1])['result'][0]['price']
-        self.balance_position = round(wallet_balance * 2.5 / 100 * float(leverage) / float(last_price),
+        self.balance_position = round(wallet_balance * percent_balance / 100 * float(leverage) / float(last_price),
                                       int(self.round_volume.get(self.main_information[1])))
         self.place_active_order()
 
