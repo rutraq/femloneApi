@@ -46,8 +46,8 @@ class ByBit:
             self.main_information.append(k)
         self.session_auth = usdt_perpetual.HTTP(
             endpoint="https://api-testnet.bybit.com",
-            api_key="L0eMYzbfFHRJywa9wk",
-            api_secret="tjmyrZHOkyGnvAtLxW7gS26wc2xGngcmoZfT"
+            api_key="FR2Kub0qvCv3WjoERa",
+            api_secret="hn9zNpEuxrFY5SVlqMAEd3h3ZmWzPtpgcpFA"
         )
         self.volume_position()
 
