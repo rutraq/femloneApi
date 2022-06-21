@@ -41,7 +41,7 @@ class ByBit:
         self.round_price = {"BTCUSDT": 1, "ETHUSDT": 2, "SOLUSDT": 3}
         self.round_volume = {"BTCUSDT": 3, "ETHUSDT": 2, "SOLUSDT": 1}
         self.balance_position = None
-        for i in check:
+        for i in self.check:
             k = i.split(":")[1]
             self.main_information.append(k)
         self.session_auth = usdt_perpetual.HTTP(
