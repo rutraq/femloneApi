@@ -51,6 +51,7 @@ class ByBit:
         )
         self.volume_position()
 
+
     def volume_position(self):
         if self.main_information[0] == "false":
             leverage = self.main_information[6]
