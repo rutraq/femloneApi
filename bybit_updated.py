@@ -46,11 +46,10 @@ class ByBit:
             self.main_information.append(k)
         self.session_auth = usdt_perpetual.HTTP(
             endpoint="https://api-testnet.bybit.com",
-            api_key="FR2Kub0qvCv3WjoERa",
-            api_secret="hn9zNpEuxrFY5SVlqMAEd3h3ZmWzPtpgcpFA"
+            api_key="oMF5d6V3kf4DQOcX20",
+            api_secret="Zv9FrzWpKk39CSUMVmZlGDqkEHfAE1HboLmz"
         )
         self.volume_position()
-
 
     def volume_position(self):
         if self.main_information[0] == "false":

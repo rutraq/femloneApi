@@ -11,7 +11,7 @@ class TelegramBot:
         self.bot = telebot.TeleBot(self.token)
         self.group_id = "-699678335"
         self.session = pybit.HTTP("https://api.bybit.com",
-                                  api_key="FR2Kub0qvCv3WjoERa", api_secret="hn9zNpEuxrFY5SVlqMAEd3h3ZmWzPtpgcpFA")
+                                  api_key="oMF5d6V3kf4DQOcX20", api_secret="Zv9FrzWpKk39CSUMVmZlGDqkEHfAE1HboLmz")
 
         markup = types.ReplyKeyboardMarkup(row_width=2)
         command1 = types.KeyboardButton('Баланс')
