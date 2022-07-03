@@ -45,7 +45,7 @@ class ByBit:
             k = i.split(":")[1]
             self.main_information.append(k)
         self.session_auth = usdt_perpetual.HTTP(
-            endpoint="https://api-testnet.bybit.com",
+            endpoint="https://api.bybit.com",
             api_key="oMF5d6V3kf4DQOcX20",
             api_secret="Zv9FrzWpKk39CSUMVmZlGDqkEHfAE1HboLmz"
         )
