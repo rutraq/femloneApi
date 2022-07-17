@@ -1,29 +1,28 @@
 import time
-import pybit
-import openpyxl
+from pybit import usdt_perpetual
 from flask import Flask, request
 from threading import Thread
 import telebot
-import re
 from datetime import datetime
-
-session = pybit.HTTP("https://api-testnet.bybit.com",
-                     api_key="XiDGurqyUmnY0Qjh4a", api_secret="NbXvPCNNMmCCpfrmIQIVeNeSly8fBb9MPviA")
 
 app = Flask(__name__)
 
 
 @app.route("/webHookReceive", methods=["POST"])
 def make_order():
-    search_symbol = request.data.decode()
-    if re.search('^[A-Z]+-(Sell|Buy)$', search_symbol) is not None:
-        telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", search_symbol)
-        th = Thread(target=ByBit, args=(search_symbol,))
-        try:
-            th.start()
-        except Exception as err:
-            record_exceptions(err)
+    strings = request.data.decode()
+    telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", strings)
+    th = Thread(target=ByBit, args=(strings,))
+    try:
+        th.start()
+    except Exception as err:
+        record_exceptions(err)
     return "200"
+
+
+@app.route("/check", methods=["GET"])
+def check():
+    return "everything is all right"
 
 
 def record_exceptions(err):
@@ -35,363 +34,220 @@ def record_exceptions(err):
         file.write(error)
 
 
-@app.route("/check", methods=["GET"])
-def check():
-    return "everything is all right"
-
-
 class ByBit:
-    def __init__(self, search_symbol):
-        self.leverage = None
-        self.percentage_of_balance = None
-        self.take_profit_one = None
-        self.closing_volume_one = None
-        self.take_profit_two = None
-        self.closing_volume_two = None
-        self.stop_loss_one = None
-        self.stop_loss_two = None
-        self.multi_take = None
-        self.qty_position_round = None
-        self.id_stop_loss_two = None
-        self.side = None
+    def __init__(self, strings):
+        self.check = strings.split("&&")
+        self.main_information = []
+        self.round_price = {"BTCUSDT": 1, "ETHUSDT": 2, "SOLUSDT": 3, "ADAUSDT": 4, "DOTUSDT": 3, "AVAXUSDT": 3}
+        self.round_volume = {"BTCUSDT": 3, "ETHUSDT": 2, "SOLUSDT": 1, "ADAUSDT": 0, "DOTUSDT": 1, "AVAXUSDT": 1}
+        self.balance_position = None
+        for i in self.check:
+            k = i.split(":")[1]
+            self.main_information.append(k)
+        self.session_auth = usdt_perpetual.HTTP(
+            endpoint="https://api.bybit.com",
+            api_key="oMF5d6V3kf4DQOcX20",
+            api_secret="Zv9FrzWpKk39CSUMVmZlGDqkEHfAE1HboLmz"
+        )
+        self.volume_position()
 
     def volume_position(self):
-        wallet_balance = session.get_wallet_balance(coin="USDT")['result']['USDT']['equity']
-        balance_position = wallet_balance * self.percentage_of_balance / 100 * self.leverage
-        return balance_position
+        if self.main_information[0] == "false":
+            leverage = self.main_information[6]
+            percent_balance = self.main_information[7]
+        else:
+            leverage = self.main_information[10]
+            percent_balance = self.main_information[11]
 
-    def place_order(self, search_symbol):
-        if int(session.my_position(symbol=search_symbol.split('-')[0])['result'][0]['size']) == 0:
-            price_position = self.volume_position()
-            last_price = session.orderbook(symbol=search_symbol.split('-')[0])['result'][0]['price']
-            qty_position = round(float(float(price_position) / float(last_price)), self.qty_position_round)
-            try:
-                round_number = int(len(last_price.split('.')[1]))
-            except IndexError:
-                round_number = 0
-            session.place_active_order(
-                symbol=search_symbol.split('-')[0],
-                side=search_symbol.split('-')[1],
-                order_type="Market",
-                qty=qty_position,
-                time_in_force="GoodTillCancel",
-                reduce_only=False,
-                close_on_trigger=False,
-                position_idx=0
-            )
-            return round_number, qty_position
+        wallet_balance = self.session_auth.get_wallet_balance(coin="USDT")['result']['USDT']['equity']
+        last_price = self.session_auth.orderbook(symbol=self.main_information[1])['result'][0]['price']
+        self.balance_position = round(wallet_balance * round(percent_balance, 2) / 100 * float(leverage) / float(last_price),
+                                      int(self.round_volume.get(self.main_information[1])))
+        self.place_active_order()
 
-    def place_order_with_stop(self, order_type, search_symbol):
-        try:
-            round_number, qty_position = self.place_order(search_symbol)
+    def place_active_order(self):
+        self.session_auth.place_active_order(
+            symbol=self.main_information[1],
+            side=self.main_information[2],
+            order_type="Market",
+            qty=self.balance_position,
+            time_in_force="GoodTillCancel",
+            reduce_only=False,
+            close_on_trigger=False,
+            position_idx=0
+        )
+        if self.main_information[0] == "false":
+            self.set_trading_stop()
+        else:
+            self.set_trading_stop_multi()
 
-            price_my_position = (session.my_position(symbol=search_symbol.split('-')[0]))
-            price = float((price_my_position['result'][0]['entry_price']))
-            price = round(price, round_number)
-            if order_type == "long":
-                stop_loss = price - price * (self.stop_loss_one / 100)
-                take_profit = price + price * (self.take_profit_one / 100)
-            else:
-                stop_loss = price + price * (self.stop_loss_one / 100)
-                take_profit = price - price * (self.take_profit_one / 100)
+    def set_trading_stop(self):
+        self.session_auth.set_trading_stop(
+            symbol=self.main_information[1],
+            side=self.main_information[2],
+            take_profit=self.main_information[4].replace(",", ""),
+            stop_loss=self.main_information[5].replace(",", ""),
+            tp_trigger_by="LastPrice",
+            sl_trigger_by="LastPrice",
+            tp_size=self.balance_position,
+            sl_size=self.balance_position,
+            position_idx=0
+        )
 
-            session.set_trading_stop(
-                symbol=search_symbol.split('-')[0],
-                side=search_symbol.split('-')[1],
-                take_profit=round(take_profit, round_number),
-                stop_loss=round(stop_loss, round_number),
-                tp_trigger_by="LastPrice",
-                sl_trigger_by="LastPrice",
-                tp_size=qty_position,
-                sl_size=qty_position,
-                position_idx=0
-            )
-            order_name = re.search("^[A-Z]+", search_symbol)
-            message = "_Сделка:_ *{0}*\n_Тип:_ {1}\n_Цена:_ {2}\n_Take profit:_ {3}\n_Stop loss:_ {4}".format(
-                order_name[0],
-                order_type,
-                price, take_profit,
-                stop_loss)
-            telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", message,
-                                                                                           parse_mode="Markdown")
-        except TypeError:
-            print('Позиция уже открыта')
+    def set_trading_stop_multi(self):
+        first_take = round(float(self.balance_position) * (float(self.main_information[8]) / 100),
+                           int(self.round_volume.get(self.main_information[1])))
+        two_take = float(self.balance_position) - first_take
+        # первый тейк
+        first_take_id = self.session_auth.set_trading_stop(
+            symbol=self.main_information[1],
+            side=self.main_information[2],
+            take_profit=self.main_information[4].replace(",", ""),
+            tp_trigger_by="LastPrice",
+            tp_size=first_take,
+            position_idx=0
+        )
+        # Второй тейк
+        self.session_auth.set_trading_stop(
+            symbol=self.main_information[1],
+            side=self.main_information[2],
+            take_profit=self.main_information[6].replace(",", ""),
+            tp_trigger_by="LastPrice",
+            tp_size=two_take,
+            position_idx=0
+        )
 
-    @staticmethod
-    def send_order_to_telegram(order_name, multi_type, price, take_profit, take_profit2,
-                               stop_loss, stop_loss_2):
-        message = "_Сделка:_ *{0}*\n_Тип:_ {1}\n_Цена:_ {2}\n_Take profit 1:_ {3}\n" \
-                  "_Take profit 2:_ {4}\n_Stop loss 1:_ {5}\n_Stop loss 2:_ {6}".format(order_name[0],
-                                                                                        multi_type,
-                                                                                        price,
-                                                                                        round(take_profit, 2),
-                                                                                        round(take_profit2, 2),
-                                                                                        round(stop_loss, 2),
-                                                                                        round(stop_loss_2, 2))
-        telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", message,
-                                                                                       parse_mode="Markdown")
+        # Стоп лосс
+        if self.main_information[2] == "Buy":
+            order_side = "Sell"
+            stop_px_price = abs(round(float(self.main_information[5].replace(",", "")) * (0.1 + 100) / 100,
+                                      int(self.round_price.get(self.main_information[1]))))
+            base_price = abs(round(float(self.main_information[5].replace(",", "")) * (0.2 + 100) / 100,
+                                   int(self.round_price.get(self.main_information[1]))))
+            price = float(self.main_information[5].replace(",", ""))
+        else:
+            order_side = "Buy"
+            stop_px_price = abs(round(float(self.main_information[5].replace(",", "")) * (0.1 - 100) / 100,
+                                      int(self.round_price.get(self.main_information[1]))))
+            base_price = abs(round(float(self.main_information[5].replace(",", "")) * (0.2 - 100) / 100,
+                                   int(self.round_price.get(self.main_information[1]))))
+            price = float(self.main_information[5].replace(",", ""))
 
-    def short_multi_take(self, search_symbol):
-        try:
-            round_number, qty_position = self.place_order(search_symbol)
-            price = float((session.my_position(symbol=search_symbol.split('-')[0])['result'][0]['entry_price']))
-            stop_loss = price + price * (float(self.stop_loss_one) / 100)
-            stop_loss = stop_loss - stop_loss * 0.2 / 100
-            bs_price = stop_loss * 0.2 / 100 + stop_loss
-            stop_loss_2 = price - price * (float(self.stop_loss_two) / 100)
-            stop_loss_2 = stop_loss_2 - stop_loss_2 * 0.2 / 100
-            bs_price_2 = stop_loss * 0.2 / 100 + stop_loss_2
-            take_profit = price - price * (float(self.take_profit_one) / 100)
-            take_profit2 = price - price * (float(self.take_profit_two) / 100)
-            two_take_profit_qty = self.set_take_profit(qty_position, search_symbol, take_profit, take_profit2,
-                                                       round_number)
+        self.session_auth.place_conditional_order(
+            symbol=self.main_information[1],
+            side=order_side,
+            order_type="Limit",
+            trigger_by="LastPrice",
+            qty=self.balance_position,
+            base_price=base_price,
+            stop_px=stop_px_price,
+            price=price,
+            time_in_force="GoodTillCancel",
+            reduce_only=False,
+            position_idx=0
+        )
+        self.order_tracking()
 
-            if round(bs_price, round_number) > round(stop_loss, round_number):
-                try:
-                    session.place_conditional_order(
-                        symbol=search_symbol.split('-')[0],
-                        side="Buy",
-                        order_type="Market",
-                        trigger_by="LastPrice",
-                        qty=qty_position,
-                        base_price=round(stop_loss, round_number),
-                        stop_px=round(bs_price, round_number),
-                        time_in_force="GoodTillCancel",
-                        reduce_only=False,
-                        position_idx=0
-                    )
-                except pybit.exceptions.InvalidRequestError:
-                    session.place_conditional_order(
-                        symbol=search_symbol.split('-')[0],
-                        side="Buy",
-                        order_type="Market",
-                        trigger_by="LastPrice",
-                        qty=qty_position,
-                        base_price=round(stop_loss, round_number),
-                        stop_px=round(bs_price, round_number),
-                        time_in_force="GoodTillCancel",
-                        reduce_only=False,
-                        position_idx=0
-                    )
+    def open_second_stop_loss(self):
+        if self.main_information[2] == "Buy":
+            order_side = "Sell"
+            stop_px_price = abs(round(float(self.main_information[7].replace(",", "")) * (0.1 + 100) / 100,
+                                      int(self.round_price.get(self.main_information[1]))))
+            base_price = abs(round(float(self.main_information[7].replace(",", "")) * (0.2 + 100) / 100,
+                                   int(self.round_price.get(self.main_information[1]))))
+            price = float(self.main_information[7].replace(",", ""))
+        else:
+            order_side = "Buy"
+            stop_px_price = abs(round(float(self.main_information[7].replace(",", "")) * (0.1 - 100) / 100,
+                                      int(self.round_price.get(self.main_information[1]))))
+            base_price = abs(round(float(self.main_information[7].replace(",", "")) * (0.2 - 100) / 100,
+                                   int(self.round_price.get(self.main_information[1]))))
+            price = float(self.main_information[7].replace(",", ""))
 
-            # order_name = re.search("^[A-Z]+", search_symbol)
-            # self.send_order_to_telegram(order_name, "Short multi take", price, take_profit, take_profit2,
-            #                             stop_loss, stop_loss_2)
-
-            self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
-        except TypeError:
-            print('Позиция уже открыта')
-
-    def set_take_profit(self, qty_position, search_symbol, take_profit, take_profit2, round_number):
-        try:
-            first_take_profit_qty = round(qty_position * self.closing_volume_one / 100, self.qty_position_round)
-            two_take_profit_qty = round(qty_position - first_take_profit_qty, self.qty_position_round)
-            session.set_trading_stop(
-                symbol=search_symbol.split('-')[0],
-                side=search_symbol.split('-')[1],
-                take_profit=round(take_profit, round_number),
-                tp_trigger_by="LastPrice",
-                sl_trigger_by="LastPrice",
-                tp_size=first_take_profit_qty,
-                sl_size=qty_position,
-                position_idx=0
-            )
-
-            session.set_trading_stop(
-                symbol=search_symbol.split('-')[0],
-                side=search_symbol.split('-')[1],
-                take_profit=round(take_profit2, round_number),
-                tp_trigger_by="LastPrice",
-                sl_trigger_by="LastPrice",
-                tp_size=two_take_profit_qty,
-                position_idx=0
-            )
-            return two_take_profit_qty
-        except pybit.exceptions.InvalidRequestError:
-            first_take_profit_qty = round(qty_position * self.closing_volume_one / 100, self.qty_position_round)
-            two_take_profit_qty = round(qty_position - first_take_profit_qty, self.qty_position_round)
-            session.set_trading_stop(
-                symbol=search_symbol.split('-')[0],
-                side=search_symbol.split('-')[1],
-                take_profit=round(take_profit, round_number),
-                tp_trigger_by="LastPrice",
-                sl_trigger_by="LastPrice",
-                tp_size=first_take_profit_qty,
-                sl_size=qty_position,
-                position_idx=0
-            )
-
-            session.set_trading_stop(
-                symbol=search_symbol.split('-')[0],
-                side=search_symbol.split('-')[1],
-                take_profit=round(take_profit2, round_number),
-                tp_trigger_by="LastPrice",
-                sl_trigger_by="LastPrice",
-                tp_size=two_take_profit_qty,
-                position_idx=0
-            )
-            return two_take_profit_qty
-
-    def long_multi_take(self, search_symbol):
-        try:
-            round_number, qty_position = self.place_order(search_symbol)
-            price = float((session.my_position(symbol=search_symbol.split('-')[0])['result'][0]['entry_price']))
-            stop_loss = price - price * (float(self.stop_loss_one) / 100)
-            stop_loss = stop_loss + stop_loss * 0.2 / 100
-            bs_price = stop_loss - stop_loss * 0.2 / 100
-            stop_loss_2 = price + price * (float(self.stop_loss_two) / 100)
-            stop_loss_2 = stop_loss_2 + stop_loss_2 * 0.2 / 100
-            bs_price_2 = stop_loss_2 - stop_loss_2 * 0.2 / 100
-            take_profit = price + price * (float(self.take_profit_one) / 100)
-            take_profit2 = price + price * (float(self.take_profit_two) / 100)
-            two_take_profit_qty = self.set_take_profit(qty_position, search_symbol, take_profit, take_profit2,
-                                                       round_number)
-
-            if round(bs_price, round_number) < round(stop_loss, round_number):
-                try:
-                    session.place_conditional_order(
-                        symbol=search_symbol.split('-')[0],
-                        side="Sell",
-                        order_type="Market",
-                        trigger_by="LastPrice",
-                        qty=qty_position,
-                        base_price=round(stop_loss, round_number),
-                        stop_px=round(bs_price, round_number),
-                        time_in_force="GoodTillCancel",
-                        reduce_only=False,
-                        position_idx=0
-                    )
-                except pybit.exceptions.InvalidRequestError:
-                    session.place_conditional_order(
-                        symbol=search_symbol.split('-')[0],
-                        side="Sell",
-                        order_type="Market",
-                        trigger_by="LastPrice",
-                        qty=qty_position,
-                        base_price=round(stop_loss, round_number),
-                        stop_px=round(bs_price, round_number),
-                        time_in_force="GoodTillCancel",
-                        reduce_only=False,
-                        position_idx=0
-                    )
-            # order_name = re.search("^[A-Z]+", search_symbol)
-            # self.send_order_to_telegram(order_name, "Long multi take", price, take_profit, take_profit2,
-            #                                     stop_loss, stop_loss_2)
-
-            self.order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty)
-        except TypeError:
-            print('Позиция уже открыта')
-
+        second_stop_id = self.session_auth.place_conditional_order(
+            symbol=self.main_information[1],
+            side=order_side,
+            order_type="Limit",
+            trigger_by="LastPrice",
+            qty=self.balance_position,
+            base_price=base_price,
+            stop_px=stop_px_price,
+            price=price,
+            time_in_force="GoodTillCancel",
+            reduce_only=False,
+            position_idx=0
+        )
+        return second_stop_id
 
     @staticmethod
-    def order_tracking(search_symbol, stop_loss_2, bs_price_2, round_number, two_take_profit_qty):
-        side = ""
-        id_stop_loss_two = ""
-        a = 1
-        global k
-        k = 1
-        test = []
-        first_take_close = False
-        while a == 1:
-            information_order = session.get_conditional_order(symbol=search_symbol.split('-')[0])['result']['data']
-            for i in information_order:
-                if i['order_status'] == "Untriggered":
-                    test.append(i)
-                if len(test) == 3:
-                    a = 0
-            time.sleep(1.5)
-        id_first_take_profit = test[2]['stop_order_id']
-        id_two_take_profit = test[1]['stop_order_id']
-        id_stop_loss = test[0]['stop_order_id']
-        while k == 1:
+    def get_name(dictionary):
+        return dictionary['trigger_price']
+
+    def order_tracking(self):
+        close_position = False
+        check_order = False
+
+        check_first_take_id = False
+
+        first_take_id = ""
+        second_take_id = ""
+        first_stop_id = ""
+        second_stop_id = ""
+        order_information_id = []
+
+        while not check_order:
+            information_order = self.session_auth.get_conditional_order(symbol=self.main_information[1])['result'][
+                'data']
+            for k in information_order:
+                if k['order_status'] == "Untriggered":
+                    order_information_id.append(k)
+                    if len(order_information_id) == 2:
+                        check_order = True
+            time.sleep(3)
+        order_information_id.sort(key=self.get_name)
+
+        for k in order_information_id:
             print(k)
-            information_order = session.get_conditional_order(symbol=search_symbol.split('-')[0])['result']['data']
-            for i in information_order:
-                if i['stop_order_id'] == id_first_take_profit and i['order_status'] == "Filled" and first_take_close == False:
-                    print('закрыли первый тейк')
-                    try:
-                        session.cancel_conditional_order(symbol=search_symbol.split('-')[0], stop_order_id=id_stop_loss)
-                    except:
-                        session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
 
-                    try:
-                        if search_symbol.split('-')[1] == "Buy":
-                            side = 'Sell'
-                        if search_symbol.split('-')[1] == "Sell":
-                            side = 'Buy'
-                        id_stop_loss_two = session.place_conditional_order(
-                            symbol=search_symbol.split('-')[0],
-                            side=side,
-                            order_type="Market",
-                            trigger_by="LastPrice",
-                            qty=two_take_profit_qty,
-                            base_price=round(stop_loss_2, round_number),
-                            stop_px=round(bs_price_2, round_number),
-                            time_in_force="GoodTillCancel",
-                            reduce_only=False,
-                            position_idx=0)['result']['stop_order_id']
-                        print('открыли второй стоп')
-                        telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y") \
-                            .send_message("-699678335", "Закрылся первый take profit по паре: {0}, по цене: {1}\n"
-                                                        "Открылся новый stop loss по цене: {2}"
-                                            .format(search_symbol, i['trigger_price'],
-                                                    round(stop_loss_2, round_number)))
-                    except pybit.exceptions.InvalidRequestError:
-                        print('цена второго стопа выше чем цена')
-                        session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
-                        session.place_active_order(
-                            symbol=search_symbol.split('-')[0],
-                            side=side,
-                            order_type="Market",
-                            qty=two_take_profit_qty,
-                            time_in_force="GoodTillCancel",
-                            reduce_only=False,
-                            close_on_trigger=False,
-                            position_idx=0
-                        )
-                        k = 0
-                        id_first_take_profit = ""
-                        id_two_take_profit = ""
-                        id_stop_loss = ""
+        if self.main_information[2] == "Sell":
+            first_stop_id = order_information_id[2]['stop_order_id']
+            first_take_id = order_information_id[1]['stop_order_id']
+            second_take_id = order_information_id[0]['stop_order_id']
+        if self.main_information[2] == "Buy":
+            first_stop_id = order_information_id[0]['stop_order_id']
+            first_take_id = order_information_id[1]['stop_order_id']
+            second_take_id = order_information_id[2]['stop_order_id']
 
-                    first_take_close = True
-                if i['stop_order_id'] == id_two_take_profit and i['order_status'] == "Filled":
-                    print("закрыли второй тейк")
-                    session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
-                    first_take_close = False
-                    id_first_take_profit = ""
-                    id_two_take_profit = ""
-                    id_stop_loss = ""
-                    k = 0
-                if i['stop_order_id'] == id_stop_loss_two and i['order_status'] == "Filled":
-                    session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
-                    print("закрыли второй стоп")
-                    first_take_close = False
-                    id_first_take_profit = ""
-                    id_two_take_profit = ""
-                    id_stop_loss = ""
-                    k = 0
-                if i['stop_order_id'] == id_stop_loss and i['order_status'] == "Filled":
-                    print("вылетели по первому стопу")
-                    # telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y") \
-                    #     .send_message("-699678335", "Закрылся по stop loss по паре: {0}".format(search_symbol))
-                    session.cancel_all_conditional_orders(symbol=search_symbol.split('-')[0])
-                    first_take_close = False
-                    id_first_take_profit = ""
-                    id_two_take_profit = ""
-                    id_stop_loss = ""
-                    k = 0
-            time.sleep(2)
+        while not close_position:
+            information_order = self.session_auth.get_conditional_order(symbol=self.main_information[1])['result'][
+                'data']
+            for k in information_order:
 
-    def open_trade(self, search_symbol):
-        if search_symbol.split('-')[1] == "Buy" and self.multi_take == "false":
-            self.place_order_with_stop("long", search_symbol)
-        if search_symbol.split('-')[1] == "Sell" and self.multi_take == "false":
-            self.place_order_with_stop("short", search_symbol)
-        if search_symbol.split('-')[1] == "Buy" and self.multi_take == "true":
-            self.long_multi_take(search_symbol)
-        if search_symbol.split('-')[1] == "Sell" and self.multi_take == "true":
-            self.short_multi_take(search_symbol)
+                # Улетели по стоп лоссу
+                if k['order_status'] == "Filled" and first_stop_id == k['stop_order_id']:
+                    close_position = True
+
+                # Закрыли первый тейк отменили первый стоп и открыли второй стоп
+                if k['order_status'] == "Filled" and first_take_id == k['stop_order_id'] and not check_first_take_id:
+                    self.session_auth.cancel_conditional_order(symbol=self.main_information[1],
+                                                               stop_order_id=first_stop_id)
+                    second_stop_id = self.open_second_stop_loss()['result'][
+                        'stop_order_id']
+                    check_first_take_id = True
+
+                # Закрыли второй тейк отменили второй стоп
+                if k['order_status'] == "Filled" and second_take_id == k['stop_order_id'] and check_first_take_id:
+                    self.session_auth.cancel_conditional_order(symbol=self.main_information[1],
+                                                               stop_order_id=second_stop_id)
+                    close_position = True
+
+                # Улетели по второму стоп лоссу
+                if k['order_status'] == "Filled" and second_stop_id == k['stop_order_id'] and check_first_take_id:
+                    close_position = True
+
+        print(f"Первый тейк {first_take_id}")
+        print(f"Второй тейк {second_take_id}")
+        print(f"Стоп лосс {first_stop_id}")
 
 
 if __name__ == "__main__":
