@@ -51,6 +51,8 @@ class ByBit:
             self.session_auth = usdt_perpetual.HTTP(endpoint="https://api-testnet.bybit.com", api_key=self.api_key,
                                                 api_secret=self.secret_api_key)
 
+            self.set_position_idx()
+
             try:
                 self.set_position_mode()
             except exceptions.InvalidRequestError:
@@ -89,18 +91,12 @@ class ByBit:
                 symbol=self.symbol,
                 mode="MergedSingle"
             )
-            self.position_idx = 0
 
         elif self.position_mode == "Hedge Mode":
             self.session_auth.position_mode_switch(
                 symbol=self.symbol,
                 mode="BothSide"
             )
-            if self.order == "Buy":
-                self.position_idx = 1
-
-            elif self.order == "Sell":
-                self.position_idx = 2
 
     # установка режима маржи
     def set_margin_mode(self):
@@ -121,16 +117,32 @@ class ByBit:
 
     # Настройка TP/SL
     def set_position_tp_sl_mode(self):
-        if self.position_tp_mode == "Full Mode":
+        check_tp_sl = self.session_auth.my_position(symbol=self.symbol)
+        check_tp_sl = check_tp_sl['result'][0]['tp_sl_mode'] + " Mode"
+
+        if self.position_tp_mode == "Full Mode" and check_tp_sl != "Full Mode":
             self.session_auth.full_partial_position_tp_sl_switch(
                 symbol=self.symbol,
                 tp_sl_mode="Full"
             )
-        elif self.position_tp_mode == "Partial Mode":
+        elif self.position_tp_mode == "Partial Mode" and check_tp_sl != "Partial Mode":
             self.session_auth.full_partial_position_tp_sl_switch(
                 symbol=self.symbol,
                 tp_sl_mode="Partial"
             )
+
+    # установка idx для позиции
+    def set_position_idx(self):
+        if self.position_mode == "One-Way Mode":
+            self.position_idx = 0
+
+        elif self.position_mode == "Hedge Mode":
+
+            if self.order == "Buy":
+                self.position_idx = 1
+
+            elif self.order == "Sell":
+                self.position_idx = 2
 
     # получаем данные о балансе и вычисляем объем ордера
     def balance_volume(self):
@@ -142,6 +154,7 @@ class ByBit:
 
     # открытие позиции
     def open_trade(self):
+        print(self.position_idx)
         qty_order = round(self.balance_volume(), 1)
         self.session_auth.place_active_order(
             symbol=self.symbol,
