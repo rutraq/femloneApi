@@ -47,13 +47,14 @@ class ByBit:
             self.margin_mode = hook["Margin mode"]
             self.position_tp_mode = hook["Position TP/SL mode"]
             self.position_idx = 0
+            self.new_order = ""
             self.session_auth = usdt_perpetual.HTTP(endpoint="https://api-testnet.bybit.com", api_key=self.api_key,
                                                 api_secret=self.secret_api_key)
 
-        try:
-            self.set_position_mode()
-        except exceptions.InvalidRequestError:
-            telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
+            try:
+                self.set_position_mode()
+            except exceptions.InvalidRequestError:
+                telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
                                                                                            "Артур дурак? да или да")
             try:
                 self.set_margin_mode()
@@ -62,7 +63,7 @@ class ByBit:
                                                                                                "Артур дурак? да или да")
             try:
                 self.set_position_tp_sl_mode()
-            except exceptions.InvalidRequestError:
+            except exceptions.FailedRequestError:
                 telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
                                                                                                "Артур дурак? да или да")
             try:
@@ -71,8 +72,7 @@ class ByBit:
                 telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
                                                                                                "Артур дурак? да или да")
 
-        if self.position == "Open Short Position" or self.position == "Open Long Position":
-            self.open_trade()
+        self.open_trade()
 
     # установка плеча
     def set_leverage(self):
@@ -174,9 +174,9 @@ class ByBit:
 
     # установка тейк профита и стоп лосса для мультитейка
     def tp_sl_profit_multi(self, qty_order):
-        first_take_volume = float(qty_order) * (int(self.close_volume_first) / 100)
-        second_take_volume = float(qty_order) * (int(self.close_volume_second) / 100)
-        three_take_volume = float(qty_order) - first_take_volume - second_take_volume
+        first_take_volume = round(float(qty_order) * (int(self.close_volume_first) / 100), 1)
+        second_take_volume = round(float(qty_order) * (int(self.close_volume_second) / 100), 1)
+        three_take_volume = round(float(qty_order) - first_take_volume - second_take_volume, 1)
 
         # первый тейк профит
         self.session_auth.set_trading_stop(
@@ -184,7 +184,7 @@ class ByBit:
             side=self.order,
             take_profit=float(self.take_profit_price),
             tp_trigger_by="LastPrice",
-            tp_size=round(first_take_volume, 1),
+            tp_size=first_take_volume,
             position_idx=self.position_idx
         )
 
@@ -194,7 +194,7 @@ class ByBit:
             side=self.order,
             take_profit=float(self.take_profit_two_price),
             tp_trigger_by="LastPrice",
-            tp_size=round(second_take_volume, 1),
+            tp_size=second_take_volume,
             position_idx=self.position_idx
         )
 
@@ -204,7 +204,26 @@ class ByBit:
             side=self.order,
             take_profit=float(self.take_profit_three_price),
             tp_trigger_by="LastPrice",
-            tp_size=round(three_take_volume, 1),
+            tp_size=three_take_volume,
+            position_idx=self.position_idx
+        )
+
+        # установка стоп лосса
+        if self.order == "Sell":
+            self.new_order = "Buy"
+
+        if self.order == "Buy":
+            self.new_order = "Sell"
+
+        self.session_auth.place_active_order(
+            symbol=self.symbol,
+            side=self.new_order,
+            order_type="Limit",
+            qty=float(qty_order),
+            price=self.stop_loss_price,
+            time_in_force="GoodTillCancel",
+            reduce_only=False,
+            close_on_trigger=False,
             position_idx=self.position_idx
         )
 
