@@ -1,6 +1,6 @@
 import ast
 import time
-from pybit import usdt_perpetual
+from pybit import usdt_perpetual, exceptions
 from flask import Flask, request
 from threading import Thread
 import telebot
@@ -44,13 +44,16 @@ class ByBit:
         self.secret_api_key = hook["Secret Api Key"]
         self.session_auth = usdt_perpetual.HTTP(endpoint="https://api-testnet.bybit.com", api_key=self.api_key,
                                                 api_secret=self.secret_api_key)
-        self.set_leverage()
+        try:
+            self.set_leverage()
+        except exceptions.InvalidRequestError:
+            telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
+                                                                                           "Сломать бы уже плечо тебе")
         self.open_trade()
 
     def set_leverage(self):
-        self.session_auth.cross_isolated_margin_switch(
+        self.session_auth.set_leverage(
             symbol=self.symbol,
-            is_isolated=True,
             buy_leverage=self.leverage,
             sell_leverage=self.leverage
         )
