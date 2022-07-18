@@ -48,10 +48,13 @@ class ByBit:
         self.session_auth = usdt_perpetual.HTTP(endpoint="https://api-testnet.bybit.com", api_key=self.api_key,
                                                 api_secret=self.secret_api_key)
         try:
+            self.set_margin_mode()
             self.set_leverage()
+            self.set_position_mode()
+            self.set_position_tp_sl_mode()
         except exceptions.InvalidRequestError:
             telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
-                                                                                           "Сломать бы уже плечо тебе")
+                                                                                           "Артур дурак? да или да")
         self.open_trade()
 
     def set_leverage(self):
@@ -60,6 +63,46 @@ class ByBit:
             buy_leverage=self.leverage,
             sell_leverage=self.leverage
         )
+
+    def set_position_mode(self):
+        if self.position_mode == "One-Way Mode":
+            self.session_auth.position_mode_switch(
+                symbol=self.symbol,
+                mode="MergedSingle"
+            )
+        elif self.position_mode == "Hedge Mode":
+            self.session_auth.position_mode_switch(
+                symbol=self.symbol,
+                mode="BothSide"
+            )
+
+    def set_margin_mode(self):
+        if self.margin_mode == "Isolated Mode":
+            self.session_auth.cross_isolated_margin_switch(
+                symbol=self.symbol,
+                is_isolated=True,
+                buy_leverage=self.leverage,
+                sell_leverage=self.leverage
+            )
+        elif self.margin_mode == "Cross Mode":
+            self.session_auth.cross_isolated_margin_switch(
+                symbol=self.symbol,
+                is_isolated=False,
+                buy_leverage=self.leverage,
+                sell_leverage=self.leverage
+            )
+
+    def set_position_tp_sl_mode(self):
+        if self.position_tp_mode == "Full Mode":
+            self.session_auth.full_partial_position_tp_sl_switch(
+                symbol=self.symbol,
+                tp_sl_mode="Full"
+            )
+        elif self.position_tp_mode == "Partial Mode":
+            self.session_auth.full_partial_position_tp_sl_switch(
+                symbol=self.symbol,
+                tp_sl_mode="Partial"
+            )
 
     # получаем данные о балансе и вычисляем объем ордера
     def balance_volume(self):
