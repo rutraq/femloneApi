@@ -42,6 +42,9 @@ class ByBit:
         self.percent_balance = hook["Percent Balance"]
         self.api_key = hook["Api Key"]
         self.secret_api_key = hook["Secret Api Key"]
+        self.position_mode = hook["Position mode"]
+        self.margin_mode = hook["Margin mode"]
+        self.position_tp_mode = hook["Position TP/SL mode"]
         self.session_auth = usdt_perpetual.HTTP(endpoint="https://api-testnet.bybit.com", api_key=self.api_key,
                                                 api_secret=self.secret_api_key)
         try:
