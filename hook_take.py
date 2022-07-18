@@ -45,12 +45,14 @@ class ByBit:
         self.position_mode = hook["Position mode"]
         self.margin_mode = hook["Margin mode"]
         self.position_tp_mode = hook["Position TP/SL mode"]
+        self.position_idx = 0
         self.session_auth = usdt_perpetual.HTTP(endpoint="https://api-testnet.bybit.com", api_key=self.api_key,
                                                 api_secret=self.secret_api_key)
+
         try:
+            self.set_position_mode()
             self.set_margin_mode()
             self.set_leverage()
-            self.set_position_mode()
             self.set_position_tp_sl_mode()
         except exceptions.InvalidRequestError:
             telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
@@ -70,11 +72,14 @@ class ByBit:
                 symbol=self.symbol,
                 mode="MergedSingle"
             )
+            self.position_idx = 0
+
         elif self.position_mode == "Hedge Mode":
             self.session_auth.position_mode_switch(
                 symbol=self.symbol,
                 mode="BothSide"
             )
+            self.position_idx = 1
 
     def set_margin_mode(self):
         if self.margin_mode == "Isolated Mode":
@@ -122,7 +127,7 @@ class ByBit:
             time_in_force="GoodTillCancel",
             reduce_only=False,
             close_on_trigger=False,
-            position_idx=0
+            position_idx=self.position_idx
         )
         self.tp_sl_profit(qty_order)
 
@@ -136,7 +141,7 @@ class ByBit:
             sl_trigger_by="LastPrice",
             tp_size=qty_order,
             sl_size=qty_order,
-            position_idx=0
+            position_idx=self.position_idx
         )
 
 
