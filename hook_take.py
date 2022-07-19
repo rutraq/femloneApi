@@ -14,7 +14,6 @@ def make_order():
     strings = request.data.decode()
     if strings[0] == "{":
         hook = ast.literal_eval(strings)
-        telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335", strings)
         th = Thread(target=ByBit, args=(hook,))
         try:
             th.start()
@@ -49,32 +48,56 @@ class ByBit:
             self.position_idx = 0
             self.new_order = ""
             self.session_auth = usdt_perpetual.HTTP(endpoint="https://api-testnet.bybit.com", api_key=self.api_key,
-                                                api_secret=self.secret_api_key)
-
+                                                    api_secret=self.secret_api_key)
             self.set_position_idx()
+            self.send_hook()
 
             try:
                 self.set_position_mode()
             except exceptions.InvalidRequestError:
-                telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
-                                                                                           "Артур дурак? да или да")
+                pass
             try:
                 self.set_margin_mode()
             except exceptions.InvalidRequestError:
-                telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
-                                                                                               "Артур дурак? да или да")
+                pass
             try:
                 self.set_position_tp_sl_mode()
             except exceptions.FailedRequestError:
-                telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
-                                                                                               "Артур дурак? да или да")
+                pass
             try:
                 self.set_leverage()
             except exceptions.InvalidRequestError:
-                telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
-                                                                                               "Артур дурак? да или да")
+                pass
 
         self.open_trade()
+
+    # отправка хука в тг
+    def send_hook(self):
+        message = '''*Position* : {position}
+*Multi Take* : {multi_take}
+*Symbol* : {symbol}
+*Order* : {order}
+*Entry Price* : {entry_price}
+*Stop Loss Price* : {stop_loss_1}
+*Stop Loss Two Price* : {stop_loss_2}
+*Take Profit Price* :  {take_profit_1} 
+*Take Profit Two Price* :  {take_profit_2}
+*Take Profit Three Price* :  {take_profit_3}
+*Percent Balance*:  {percent}'''
+        telebot.TeleBot("5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y").send_message("-699678335",
+                                                                                       message.format(
+                                                                                           position=self.position,
+                                                                                           multi_take=self.multi_take,
+                                                                                           symbol=self.symbol,
+                                                                                           order=self.order,
+                                                                                           entry_price=self.entry_price,
+                                                                                           stop_loss_1=self.stop_loss_price,
+                                                                                           stop_loss_2=self.stop_loss_two_price,
+                                                                                           take_profit_1=self.take_profit_price,
+                                                                                           take_profit_2=self.take_profit_two_price,
+                                                                                           take_profit_3=self.take_profit_three_price,
+                                                                                           percent=self.percent_balance
+                                                                                       ), parse_mode="Markdown")
 
     # установка плеча
     def set_leverage(self):
@@ -154,7 +177,6 @@ class ByBit:
 
     # открытие позиции
     def open_trade(self):
-        print(self.position_idx)
         qty_order = round(self.balance_volume(), 1)
         self.session_auth.place_active_order(
             symbol=self.symbol,
@@ -222,23 +244,23 @@ class ByBit:
         )
 
         # установка стоп лосса
-        if self.order == "Sell":
-            self.new_order = "Buy"
-
-        if self.order == "Buy":
-            self.new_order = "Sell"
-
-        self.session_auth.place_active_order(
-            symbol=self.symbol,
-            side=self.new_order,
-            order_type="Limit",
-            qty=float(qty_order),
-            price=self.stop_loss_price,
-            time_in_force="GoodTillCancel",
-            reduce_only=False,
-            close_on_trigger=False,
-            position_idx=self.position_idx
-        )
+        # if self.order == "Sell":
+        #     self.new_order = "Buy"
+        #
+        # if self.order == "Buy":
+        #     self.new_order = "Sell"
+        #
+        # self.session_auth.place_active_order(
+        #     symbol=self.symbol,
+        #     side=self.new_order,
+        #     order_type="Limit",
+        #     qty=float(qty_order),
+        #     price=self.stop_loss_price,
+        #     time_in_force="GoodTillCancel",
+        #     reduce_only=False,
+        #     close_on_trigger=False,
+        #     position_idx=self.position_idx
+        # )
 
 
 @app.route("/check", methods=["GET"])
