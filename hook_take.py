@@ -46,6 +46,7 @@ class ByBit:
             self.margin_mode = hook["Margin mode"]
             self.position_tp_mode = hook["Position TP/SL mode"]
             self.position_idx = 0
+            self.base_price = 0
             self.new_order = ""
             self.session_auth = usdt_perpetual.HTTP(endpoint="https://api-testnet.bybit.com", api_key=self.api_key,
                                                     api_secret=self.secret_api_key)
@@ -69,7 +70,15 @@ class ByBit:
             except exceptions.InvalidRequestError:
                 pass
 
-        self.open_trade()
+            self.open_trade()
+
+        if self.position == "Close Take Profit":
+            self.symbol = hook["Symbol"]
+            self.take_profit = hook["Take Profit"]
+            self.move_tp = hook["Move TP"]
+
+            if self.take_profit == "TP3":
+                self.cancel_sl()
 
     # отправка хука в тг
     def send_hook(self):
@@ -244,23 +253,32 @@ class ByBit:
         )
 
         # установка стоп лосса
-        # if self.order == "Sell":
-        #     self.new_order = "Buy"
-        #
-        # if self.order == "Buy":
-        #     self.new_order = "Sell"
-        #
-        # self.session_auth.place_active_order(
-        #     symbol=self.symbol,
-        #     side=self.new_order,
-        #     order_type="Limit",
-        #     qty=float(qty_order),
-        #     price=self.stop_loss_price,
-        #     time_in_force="GoodTillCancel",
-        #     reduce_only=False,
-        #     close_on_trigger=False,
-        #     position_idx=self.position_idx
-        # )
+        if self.order == "Sell":
+            self.new_order = "Buy"
+            self.base_price = float(self.stop_loss_price) - (float(self.stop_loss_price) * (0.5 / 100))
+
+        if self.order == "Buy":
+            self.new_order = "Sell"
+            self.base_price = float(self.stop_loss_price) + (float(self.stop_loss_price) * (0.5 / 100))
+
+        self.session_auth.place_conditional_order(
+            symbol=self.symbol,
+            order_type="Market",
+            side=self.new_order,
+            qty=float(qty_order),
+            base_price=round(float(self.base_price), 1),
+            stop_px=round(float(self.stop_loss_price), 1),
+            time_in_force="GoodTillCancel",
+            trigger_by="LastPrice",
+            reduce_only=False,
+            close_on_trigger=False,
+            position_idx=self.position_idx
+        )
+
+    def cancel_sl(self):
+        self.session_auth.cancel_all_conditional_orders(
+            symbol=self.symbol
+        )
 
 
 @app.route("/check", methods=["GET"])
