@@ -8,12 +8,12 @@ session_auth = usdt_perpetual.HTTP(
 )
 
 print(session_auth.place_conditional_order(
-    symbol="BTCUSDT",
+    symbol="AVAXUSDT",
     order_type="Market",
     side="Buy",
-    qty=0.1,
-    base_price=23900,
-    stop_px=24000,
+    qty=10.1,
+    base_price=24.100,
+    stop_px=24.134,
     time_in_force="GoodTillCancel",
     trigger_by="LastPrice",
     reduce_only=False,
