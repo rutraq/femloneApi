@@ -78,6 +78,11 @@ class ByBit:
             self.symbol = hook["Symbol"]
             self.take_profit = hook["Take Profit"]
             self.move_tp = hook["Move TP"]
+            self.stop_loss_two_price = hook["Stop Loss Two Price"]
+            self.base_price_second = hook["Base price second"]
+            self.side_order = hook["Side Order"]
+            self.api_key = hook["Api Key"]
+            self.secret_api_key = hook["Secret Api Key"]
 
             if self.take_profit == "TP3":
                 self.cancel_sl()
