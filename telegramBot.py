@@ -18,7 +18,8 @@ class TelegramBot:
         command2 = types.KeyboardButton('Пидор ли женя?')
         command3 = types.KeyboardButton('Открытые позиции')
         command4 = types.KeyboardButton('Ошибки')
-        markup.add(command1, command2, command3, command4)
+        command5 = types.KeyboardButton('Какая-то пупа залупа')
+        markup.add(command1, command2, command3, command4, command5)
         self.bot.send_message(self.group_id, "Выберите команду:", reply_markup=markup)
 
         @self.bot.message_handler(content_types=['text'])
@@ -31,6 +32,8 @@ class TelegramBot:
                 self.get_balance()
             elif message.text == "Ошибки":
                 self.get_errors()
+            elif message.text == "Какая-то пупа залупа":
+                self.unrealised_pnl()
 
         self.bot.infinity_polling()
 
@@ -64,6 +67,10 @@ class TelegramBot:
                 self.bot.send_message(self.group_id, "Ошибок нет")
         else:
             self.bot.send_message(self.group_id, "Ошибок нет")
+
+    def unrealised_pnl(self):
+        balance = round(self.session.get_wallet_balance(coin="USDT")['result']['USDT']['unrealised_pnl'], 2)
+        self.bot.send_message(self.group_id, "Ваш unrealised pnl USDT: {0}".format(balance))
 
 
 if __name__ == "__main__":
