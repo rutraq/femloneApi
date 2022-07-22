@@ -18,7 +18,7 @@ class TelegramBot:
         command2 = types.KeyboardButton('Пидор ли женя?')
         command3 = types.KeyboardButton('Открытые позиции')
         command4 = types.KeyboardButton('Ошибки')
-        command5 = types.KeyboardButton('Какая-то пупа залупа')
+        command5 = types.KeyboardButton('Unrealised pnl')
         markup.add(command1, command2, command3, command4, command5)
         self.bot.send_message(self.group_id, "Выберите команду:", reply_markup=markup)
 
@@ -32,7 +32,7 @@ class TelegramBot:
                 self.get_balance()
             elif message.text == "Ошибки":
                 self.get_errors()
-            elif message.text == "Какая-то пупа залупа":
+            elif message.text == "Unrealised pnl":
                 self.unrealised_pnl()
 
         self.bot.infinity_polling()
