@@ -68,7 +68,6 @@ class TelegramBot:
         else:
             self.bot.send_message(self.group_id, "Ошибок нет")
 
-
     def unrealised_pnl(self):
         balance = round(self.session.get_wallet_balance(coin="USDT")['result']['USDT']['unrealised_pnl'], 2)
         self.bot.send_message(self.group_id, "Ваш unrealised pnl USDT: {0}".format(balance))
