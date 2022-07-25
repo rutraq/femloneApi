@@ -87,6 +87,10 @@ class ByBit:
             if self.take_profit == "TP3":
                 self.cancel_sl()
 
+            if self.take_profit == self.move_tp:
+                self.cancel_sl()
+                self.new_sl()
+
     # отправка хука в тг
     def send_hook(self):
         message = '''*Position* : {position}
@@ -281,8 +285,28 @@ class ByBit:
         )
 
     def cancel_sl(self):
-        self.session_auth.cancel_all_conditional_orders(
+        check_size_position = (self.session_auth.my_position(
             symbol=self.symbol
+        ))
+        if check_size_position["result"][0]["size"] > 0:
+            self.session_auth.cancel_all_conditional_orders(
+                symbol=self.symbol
+            )
+
+    def new_sl(self):
+        qty_order = self.session_auth.my_position(symbol=self.symbol)
+        self.session_auth.place_conditional_order(
+            symbol=self.symbol,
+            order_type="Market",
+            side=self.new_order,
+            qty=float(qty_order["result"][0]["size"]),
+            base_price=float(self.base_price_second),
+            stop_px=float(self.stop_loss_two_price),
+            time_in_force="GoodTillCancel",
+            trigger_by="LastPrice",
+            reduce_only=False,
+            close_on_trigger=False,
+            position_idx=self.position_idx
         )
 
 
