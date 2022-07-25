@@ -50,7 +50,7 @@ class ByBit:
             self.base_price_second = hook["Base price second"]
             self.round_volume = hook["Round volume"]
             self.new_order = ""
-            self.session_auth = usdt_perpetual.HTTP(endpoint="https://api-testnet.bybit.com", api_key=self.api_key,
+            self.session_auth = usdt_perpetual.HTTP(endpoint="https://api.bybit.com", api_key=self.api_key,
                                                     api_secret=self.secret_api_key)
             self.set_position_idx()
             self.send_hook()

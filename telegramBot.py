@@ -17,16 +17,21 @@ class TelegramBot:
         self.conn = psycopg2.connect(
             "dbname='slihduor' user='slihduor' host='rajje.db.elephantsql.com' password='Z3kDd9k-Hzri0TsNeXOEKYkb7jo9wClC'")
         self.cursor = self.conn.cursor()
+        self.last_inline = {}
 
         @self.bot.message_handler(commands=['start'])
         def start(message):
             self.bot.send_message(message.chat.id, "Введите код который вам был выдан.")
 
+        @self.bot.message_handler(commands=['commands'])
+        def send_commands(message):
+            self.send_reply_markup(message.chat.id)
+
         @self.bot.message_handler(content_types=['text'])
         def get_text_messages(message):
             if message.text == "Пидор ли женя?":
                 if self.check_user(message.chat.id):
-                    self.bot.send_message(self.group_id, "Конечно да!")
+                    self.bot.send_message(message.chat.id, "Конечно да!")
             elif message.text == "Открытые позиции":
                 if self.check_user(message.chat.id):
                     self.get_positions()
@@ -62,28 +67,28 @@ class TelegramBot:
             user_id = message.message.chat.id
             if message.data == "pidor":
                 if self.check_user(user_id):
-                    self.bot.send_message(self.group_id, "Конечно да!")
                     self.send_reply_markup(user_id)
+                    self.bot.send_message(user_id, "Конечно да!")
             elif message.data == "positions":
                 if self.check_user(user_id):
-                    self.get_positions()
                     self.send_reply_markup(user_id)
+                    self.get_positions()
             elif message.data == "balance":
                 if self.check_user(user_id):
-                    self.get_balance()
                     self.send_reply_markup(user_id)
+                    self.get_balance()
             elif message.data == "errors":
                 if self.check_user(user_id):
-                    self.get_errors()
                     self.send_reply_markup(user_id)
+                    self.get_errors()
             elif message.data == "pnl":
                 if self.check_user(user_id):
-                    self.unrealised_pnl()
                     self.send_reply_markup(user_id)
+                    self.unrealised_pnl()
             elif message.data == "date":
                 if self.check_user(user_id):
-                    self.check_date_of_subscription(user_id)
                     self.send_reply_markup(user_id)
+                    self.check_date_of_subscription(user_id)
             self.bot.answer_callback_query(message.id, "")
 
         self.bot.infinity_polling()
@@ -98,7 +103,7 @@ class TelegramBot:
         command5 = types.InlineKeyboardButton('Unrealised pnl', callback_data="pnl")
         command6 = types.InlineKeyboardButton('Дата окончания подписки', callback_data="date")
         markup.add(command1, command2, command3, command4, command5, command6)
-        self.bot.send_message(user_id, "Выберите команду:", reply_markup=markup)
+        self.last_inline[user_id] = self.bot.send_message(user_id, "Выберите команду:", reply_markup=markup)
 
     def get_balance(self):
         balance = round(self.session.get_wallet_balance(coin="USDT")['result']['USDT']['equity'], 2)
@@ -144,7 +149,12 @@ class TelegramBot:
             date = ans[0][2]
             date_now = datetime.now().date()
             if date_now < date:
-                return True  # подписка ещё действительна
+                try:
+                    self.bot.delete_message(user_id, self.last_inline[user_id].message_id)
+                except KeyError:
+                    pass
+                finally:
+                    return True  # подписка ещё действительна
             else:
                 self.bot.send_message(user_id, "Действие вашей подписки закончилось")
                 return False  # подписка зкончилась
