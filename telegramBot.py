@@ -2,6 +2,7 @@ import openpyxl
 import telebot
 from telebot import types
 import pybit
+from pybit import exceptions, HTTP
 import os
 from datetime import datetime
 import psycopg2
@@ -13,8 +14,8 @@ class TelegramBot:
         self.token = "5392822083:AAHSdKNl_C60QjyVn0vqYv6jIln6rV2MG9Y"
         self.bot = telebot.TeleBot(self.token)
         self.group_id = "-699678335"
-        self.session = pybit.HTTP("https://api.bybit.com",
-                                  api_key="oMF5d6V3kf4DQOcX20", api_secret="Zv9FrzWpKk39CSUMVmZlGDqkEHfAE1HboLmz")
+        self.session = HTTP("https://api.bybit.com", api_key="oMF5d6V3kf4DQOcX20",
+                            api_secret="Zv9FrzWpKk39CSUMVmZlGDqkEHfAE1HboLmz")
         self.conn = psycopg2.connect(
             "dbname='slihduor' user='slihduor' host='rajje.db.elephantsql.com' password='Z3kDd9k-Hzri0TsNeXOEKYkb7jo9wClC'")
         self.cursor = self.conn.cursor()
@@ -61,31 +62,39 @@ class TelegramBot:
             user_id = message.message.chat.id
             if message.data == "pidor":
                 if self.check_user(user_id):
-                    self.send_reply_markup(user_id)
                     self.bot.send_message(user_id, "Конечно да!")
-            elif message.data == "positions" and self.check_user_in_keys(user_id):
-                if self.check_user(user_id):
-                    self.send_reply_markup(user_id)
+                    self.del_and_send_reply(user_id)
+            elif message.data == "positions":
+                if self.check_user(user_id) and self.check_user_in_keys(user_id):
                     self.get_positions()
-            elif message.data == "balance" and self.check_user_in_keys(user_id):
-                if self.check_user(user_id):
-                    self.send_reply_markup(user_id)
+                    self.del_and_send_reply(user_id)
+            elif message.data == "balance":
+                if self.check_user(user_id) and self.check_user_in_keys(user_id):
                     self.get_balance(user_id)
+                    self.del_and_send_reply(user_id)
             elif message.data == "errors":
                 if self.check_user(user_id):
-                    self.send_reply_markup(user_id)
                     self.get_errors()
-            elif message.data == "pnl" and self.check_user_in_keys(user_id):
-                if self.check_user(user_id):
-                    self.send_reply_markup(user_id)
-                    self.unrealised_pnl()
+                    self.del_and_send_reply(user_id)
+            elif message.data == "pnl":
+                if self.check_user(user_id) and self.check_user_in_keys(user_id):
+                    self.unrealised_pnl(user_id)
+                    self.del_and_send_reply(user_id)
             elif message.data == "date":
                 if self.check_user(user_id):
-                    self.send_reply_markup(user_id)
                     self.check_date_of_subscription(user_id)
+                    self.del_and_send_reply(user_id)
             self.bot.answer_callback_query(message.id, "")
 
         self.bot.infinity_polling()
+
+    def del_and_send_reply(self, user_id):
+        try:
+            self.bot.delete_message(user_id, self.last_inline[user_id].message_id)
+        except KeyError:
+            pass
+        finally:
+            self.send_reply_markup(user_id)
 
     def registration(self, message):
         try:
@@ -128,12 +137,8 @@ class TelegramBot:
 
     def set_secret_key(self, message):
         encoded = self.encrypt_keys(message)
-        if self.check_user_in_keys(message.chat.id):
-            self.cursor.execute(
-                "update keys set api_secret_key = '{0}' where user_id_keys = {1}".format(encoded, message.chat.id))
-        else:
-            self.cursor.execute(
-                "insert into keys (user_id_keys, api_secret_key) values ({0}, '{1}')".format(message.chat.id, encoded))
+        self.cursor.execute(
+            "update keys set api_secret_key = '{0}' where user_id_keys = {1}".format(encoded, message.chat.id))
         self.conn.commit()
         self.bot.send_message(message.chat.id, "Ваши ключи успешно зашифрованы и сохранены")
         self.send_reply_markup(message.chat.id)
@@ -156,10 +161,18 @@ class TelegramBot:
         self.last_inline[user_id] = self.bot.send_message(user_id, "Выберите команду:", reply_markup=markup)
 
     def get_balance(self, user_id):
-        keys = self.decrypt_keys(user_id)
-        session = pybit.HTTP("https://api.bybit.com", api_key=keys[0], api_secret=keys[1])
-        balance = round(session.get_wallet_balance(coin="USDT")['result']['USDT']['equity'], 2)
-        self.bot.send_message(user_id, "Ваш баланс USDT: {0}".format(balance))
+        try:
+            keys = self.decrypt_keys(user_id)
+            session = HTTP("https://api.bybit.com", api_key=keys[0], api_secret=keys[1])
+            balance = round(session.get_wallet_balance(coin="USDT")['result']['USDT']['equity'], 2)
+            self.bot.send_message(user_id, "Ваш баланс USDT: {0}".format(balance))
+        except exceptions.InvalidRequestError as ex:
+            if ex.message == "invalid api_key":
+                self.bot.send_message(user_id,
+                                      "Ваши api ключи являются неверными, чтобы обновить ключи "
+                                      "используйте команду /api_keys")
+            else:
+                print(ex)
 
     def get_positions(self):
         wb = openpyxl.load_workbook('main.xlsx')
@@ -188,9 +201,11 @@ class TelegramBot:
         else:
             self.bot.send_message(self.group_id, "Ошибок нет")
 
-    def unrealised_pnl(self):
-        balance = round(self.session.get_wallet_balance(coin="USDT")['result']['USDT']['unrealised_pnl'], 2)
-        self.bot.send_message(self.group_id, "Ваш unrealised pnl USDT: {0}".format(balance))
+    def unrealised_pnl(self, user_id):
+        keys = self.decrypt_keys(user_id)
+        session = HTTP("https://api.bybit.com", api_key=keys[0], api_secret=keys[1])
+        balance = round(session.get_wallet_balance(coin="USDT")['result']['USDT']['unrealised_pnl'], 2)
+        self.bot.send_message(user_id, "Ваш unrealised pnl USDT: {0}".format(balance))
 
     def check_user_in_keys(self, user_id):
         self.cursor.execute("select * from keys where user_id_keys = {0}".format(user_id))
@@ -211,12 +226,7 @@ class TelegramBot:
             date = ans[0][2]
             date_now = datetime.now().date()
             if date_now < date:
-                try:
-                    self.bot.delete_message(user_id, self.last_inline[user_id].message_id)
-                except KeyError:
-                    pass
-                finally:
-                    return True  # подписка ещё действительна
+                return True  # подписка ещё действительна
             else:
                 self.bot.send_message(user_id, "Действие вашей подписки закончилось")
                 return False  # подписка зкончилась
