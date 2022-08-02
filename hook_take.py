@@ -31,7 +31,7 @@ class ByBit:
             self.order = hook["Order"]
             self.entry_price = hook["Entry Price"]
             self.stop_loss_price = hook["Stop Loss Price"]
-            self.stop_loss_two_price = hook["Stop Loss Two Price"]
+            self.base_price = hook["Base price"]
             self.take_profit_price = hook["Take Profit Price"]
             self.take_profit_two_price = hook["Take Profit Two Price"]
             self.take_profit_three_price = hook["Take Profit Three Price"]
@@ -46,8 +46,6 @@ class ByBit:
             self.margin_mode = hook["Margin mode"]
             self.position_tp_mode = hook["Position TP/SL mode"]
             self.position_idx = 0
-            self.base_price = hook["Base price"]
-            self.base_price_second = hook["Base price second"]
             self.round_volume = hook["Round volume"]
             self.new_order = ""
             self.session_auth = usdt_perpetual.HTTP(endpoint="https://api.bybit.com", api_key=self.api_key,
@@ -77,9 +75,9 @@ class ByBit:
         if self.position == "Close Take Profit":
             self.symbol = hook["Symbol"]
             self.take_profit = hook["Take Profit"]
-            self.move_tp = hook["Move TP"]
-            self.stop_loss_two_price = hook["Stop Loss Two Price"]
-            self.base_price_second = hook["Base price second"]
+            self.move_sl = hook["Move SL"]
+            self.stop_loss_two_price = hook["Stop Loss Price"]
+            self.base_price_second = hook["Base price"]
             self.side_order = hook["Side Order"]
             self.api_key = hook["Api Key"]
             self.secret_api_key = hook["Secret Api Key"]
@@ -87,7 +85,7 @@ class ByBit:
             if self.take_profit == "TP3":
                 self.cancel_sl()
 
-            if self.take_profit == self.move_tp:
+            if self.move_sl == "true" and (self.take_profit == "TP1" or self.take_profit == "TP2"):
                 self.cancel_sl()
                 self.new_sl()
 
