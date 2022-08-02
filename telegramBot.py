@@ -66,7 +66,7 @@ class TelegramBot:
                     self.del_and_send_reply(user_id)
             elif message.data == "positions":
                 if self.check_user(user_id) and self.check_user_in_keys(user_id):
-                    self.get_positions()
+                    self.get_positions(user_id)
                     self.del_and_send_reply(user_id)
             elif message.data == "balance":
                 if self.check_user(user_id) and self.check_user_in_keys(user_id):
@@ -174,22 +174,30 @@ class TelegramBot:
             else:
                 print(ex)
 
-    def get_positions(self):
+    def get_positions(self, user_id):
         wb = openpyxl.load_workbook('main.xlsx')
         sheet = wb['Лист1']
         count_row = sheet.max_row
-        self.bot.send_message(self.group_id, self.search_excel_info(count_row, sheet))
+        self.bot.send_message(user_id, self.search_excel_info(count_row, sheet, user_id))
 
-    def search_excel_info(self, count_row, sheet):
-        positions = ""
-        for i in range(count_row - 1):
-            row_excel = sheet[f'A{int(i + 2)}'].value
-            position = self.session.my_position(symbol=row_excel)['result'][0]['position_value']
-            if position != 0:
-                positions += row_excel + "\n"
-        if positions == "":
-            positions = "Нет открытых позиций"
-        return positions
+    def search_excel_info(self, count_row, sheet, user_id):
+        try:
+            positions = ""
+            for i in range(count_row - 1):
+                row_excel = sheet[f'A{int(i + 2)}'].value
+                keys = self.decrypt_keys(user_id)
+                session = HTTP("https://api.bybit.com", api_key=keys[0], api_secret=keys[1])
+                position = session.my_position(symbol=row_excel)['result'][0]['position_value']
+                if position != 0:
+                    positions += row_excel + "\n"
+            if positions == "":
+                positions = "Нет открытых позиций"
+            return positions
+        except exceptions.InvalidRequestError as ex:
+            if ex.message == "invalid api_key":
+                return "Ваши api ключи являются неверными, чтобы обновить ключи используйте команду /api_keys"
+            else:
+                print(ex)
 
     def get_errors(self):
         if os.path.isfile("errors.txt"):
@@ -202,10 +210,18 @@ class TelegramBot:
             self.bot.send_message(self.group_id, "Ошибок нет")
 
     def unrealised_pnl(self, user_id):
-        keys = self.decrypt_keys(user_id)
-        session = HTTP("https://api.bybit.com", api_key=keys[0], api_secret=keys[1])
-        balance = round(session.get_wallet_balance(coin="USDT")['result']['USDT']['unrealised_pnl'], 2)
-        self.bot.send_message(user_id, "Ваш unrealised pnl USDT: {0}".format(balance))
+        try:
+            keys = self.decrypt_keys(user_id)
+            session = HTTP("https://api.bybit.com", api_key=keys[0], api_secret=keys[1])
+            balance = round(session.get_wallet_balance(coin="USDT")['result']['USDT']['unrealised_pnl'], 2)
+            self.bot.send_message(user_id, "Ваш unrealised pnl USDT: {0}".format(balance))
+        except exceptions.InvalidRequestError as ex:
+            if ex.message == "invalid api_key":
+                self.bot.send_message(user_id,
+                                      "Ваши api ключи являются неверными, чтобы обновить ключи "
+                                      "используйте команду /api_keys")
+            else:
+                print(ex)
 
     def check_user_in_keys(self, user_id):
         self.cursor.execute("select * from keys where user_id_keys = {0}".format(user_id))
