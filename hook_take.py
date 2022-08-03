@@ -97,7 +97,6 @@ class ByBit:
 *Order* : {order}
 *Entry Price* : {entry_price}
 *Stop Loss Price* : {stop_loss_1}
-*Stop Loss Two Price* : {stop_loss_2}
 *Take Profit Price* :  {take_profit_1} 
 *Take Profit Two Price* :  {take_profit_2}
 *Take Profit Three Price* :  {take_profit_3}
@@ -110,7 +109,6 @@ class ByBit:
                                                                                            order=self.order,
                                                                                            entry_price=self.entry_price,
                                                                                            stop_loss_1=self.stop_loss_price,
-                                                                                           stop_loss_2=self.stop_loss_two_price,
                                                                                            take_profit_1=self.take_profit_price,
                                                                                            take_profit_2=self.take_profit_two_price,
                                                                                            take_profit_3=self.take_profit_three_price,
