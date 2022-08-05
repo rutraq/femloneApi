@@ -72,7 +72,7 @@ class ByBit:
 
             self.open_trade()
 
-        if self.position == "Close Take Profit":
+        elif self.position == "Close Take Profit":
             self.symbol = hook["Symbol"]
             self.take_profit = hook["Take Profit"]
             self.move_sl = hook["Move SL"]
@@ -81,6 +81,8 @@ class ByBit:
             self.side_order = hook["Side Order"]
             self.api_key = hook["Api Key"]
             self.secret_api_key = hook["Secret Api Key"]
+            self.session_auth = usdt_perpetual.HTTP(endpoint="https://api.bybit.com", api_key=self.api_key,
+                                                    api_secret=self.secret_api_key)
 
             if self.take_profit == "TP3":
                 self.cancel_sl()
