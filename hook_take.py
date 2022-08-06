@@ -278,6 +278,7 @@ class ByBit:
             time_in_force="GoodTillCancel",
             trigger_by="LastPrice",
             reduce_only=False,
+            order_link_id=f"{self.symbol}-StopLoss",
             close_on_trigger=False,
             position_idx=self.position_idx
         )
@@ -287,8 +288,9 @@ class ByBit:
             symbol=self.symbol
         ))
         if check_size_position["result"][0]["size"] > 0:
-            self.session_auth.cancel_all_conditional_orders(
-                symbol=self.symbol
+            self.session_auth.cancel_conditional_order(
+                symbol=self.symbol,
+                order_link_id=f"{self.symbol}-StopLoss"
             )
 
     def new_sl(self):

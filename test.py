@@ -8,16 +8,22 @@ session_auth = usdt_perpetual.HTTP(
 )
 
 
-print(session_auth.place_conditional_order(
+# print(session_auth.place_conditional_order(
+#     symbol="BTCUSDT",
+#     order_type="Market",
+#     side="Sell",
+#     qty=0.015,
+#     base_price=23000,
+#     stop_px=21800.8,
+#     time_in_force="GoodTillCancel",
+#     trigger_by="LastPrice",
+#     reduce_only=False,
+#     order_link_id="BTCUSDT-StopLoss",
+#     close_on_trigger=False,
+#     position_idx=0
+# ))
+
+print(session_auth.cancel_conditional_order(
     symbol="BTCUSDT",
-    order_type="Market",
-    side="Sell",
-    qty=0.015,
-    base_price=21000,
-    stop_px=20800.8,
-    time_in_force="GoodTillCancel",
-    trigger_by="LastPrice",
-    reduce_only=False,
-    close_on_trigger=False,
-    position_idx=0
+    order_link_id="BTCUSDT-StopLoss"
 ))
