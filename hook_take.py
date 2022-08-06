@@ -25,6 +25,7 @@ def make_order():
 class ByBit:
     def __init__(self, hook):
         self.position = hook["Position"]
+        self.new_order = ""
         if self.position == "Open Short Position" or self.position == "Open Long Position":
             self.multi_take = hook["Multi Take"]
             self.symbol = hook["Symbol"]
@@ -47,7 +48,6 @@ class ByBit:
             self.position_tp_mode = hook["Position TP/SL mode"]
             self.position_idx = 0
             self.round_volume = hook["Round volume"]
-            self.new_order = ""
             self.session_auth = usdt_perpetual.HTTP(endpoint="https://api.bybit.com", api_key=self.api_key,
                                                     api_secret=self.secret_api_key)
             self.set_position_idx()
