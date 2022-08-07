@@ -297,6 +297,7 @@ class ByBit:
         check_size_position = (self.session_auth.my_position(
             symbol=self.symbol
         ))
+
         if check_size_position["result"][0]["size"] > 0:
             qty_order = self.session_auth.my_position(symbol=self.symbol)
             self.session_auth.place_conditional_order(
