@@ -309,6 +309,7 @@ class ByBit:
                 time_in_force="GoodTillCancel",
                 trigger_by="LastPrice",
                 reduce_only=False,
+                order_link_id=f"{self.symbol}-StopLoss",
                 close_on_trigger=False,
                 position_idx=self.position_idx
             )
