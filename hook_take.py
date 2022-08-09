@@ -81,8 +81,11 @@ class ByBit:
             self.side_order = hook["Side Order"]
             self.api_key = hook["Api Key"]
             self.secret_api_key = hook["Secret Api Key"]
+            self.position_idx = 0
             self.session_auth = usdt_perpetual.HTTP(endpoint="https://api.bybit.com", api_key=self.api_key,
                                                     api_secret=self.secret_api_key)
+
+            self.set_position_idx()
 
             if self.take_profit == "TP3":
                 self.cancel_sl()
@@ -312,7 +315,7 @@ class ByBit:
                 reduce_only=False,
                 order_link_id=f"{self.symbol}-StopLoss",
                 close_on_trigger=False,
-                position_idx=self.position_idx
+                position_idx=0
             )
 
 
