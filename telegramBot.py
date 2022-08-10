@@ -183,10 +183,10 @@ class TelegramBot:
     def search_excel_info(self, count_row, sheet, user_id):
         try:
             positions = ""
+            keys = self.decrypt_keys(user_id)
+            session = HTTP("https://api.bybit.com", api_key=keys[0], api_secret=keys[1])
             for i in range(count_row - 1):
                 row_excel = sheet[f'A{int(i + 2)}'].value
-                keys = self.decrypt_keys(user_id)
-                session = HTTP("https://api.bybit.com", api_key=keys[0], api_secret=keys[1])
                 position = session.my_position(symbol=row_excel)['result'][0]['position_value']
                 if position != 0:
                     positions += row_excel + "\n"
