@@ -1,7 +1,6 @@
 import openpyxl
 import telebot
 from telebot import types
-import pybit
 from pybit import exceptions, HTTP
 import os
 from datetime import datetime
